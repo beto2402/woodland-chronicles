@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(command -v nvm)",
+      "Read(//home/david/**)",
+      "Bash(command -v volta)",
+      "Bash(volta --version)",
+      "Bash(command -v fnm)",
+      "Bash(fnm --version)",
+      "Bash(curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh)",
+      "Bash(bash)",
+      "Bash(mkdir /tmp/wc-backup)",
+      "Bash(mv /home/david/woodland-chronicles/root-leaderboard.jsx /home/david/woodland-chronicles/ROOT_LEADERBOARD_SUMMARY.md /home/david/woodland-chronicles/schema.prisma /tmp/wc-backup/)"
+    ]
+  }
+}
