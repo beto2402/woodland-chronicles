@@ -120,7 +120,7 @@ Logs a new game.
 }
 ```
 **Validation:**
-- At least 2 players
+- 2–6 players (Root's official range, including all expansions)
 - Exactly 1 winner (SCORE/DOMINATION) or exactly 2 winners (COALITION)
 - COALITION requires a Vagabond faction in the game and Vagabond must be a winner
 - Valid factions: `marquise`, `eyrie`, `alliance`, `vagabond`, `vagabond2`, `riverfolk`, `lizard`, `duchy`, `corvid`, `lord`, `keepers`, `knaves`, `marauder`, `warlord`, `bandits`, `exile`

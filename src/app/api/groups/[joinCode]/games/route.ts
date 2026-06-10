@@ -52,8 +52,8 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json({ error: "Invalid victoryType" }, { status: 400 });
   }
 
-  if (!Array.isArray(players) || players.length < 2) {
-    return NextResponse.json({ error: "At least 2 players required" }, { status: 400 });
+  if (!Array.isArray(players) || players.length < 2 || players.length > 6) {
+    return NextResponse.json({ error: "Games require 2–6 players" }, { status: 400 });
   }
 
   const winners = players.filter((p: { isWinner: boolean }) => p.isWinner);

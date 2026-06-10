@@ -24,6 +24,7 @@ const FACTIONS = [
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
 const FACTION_MAP = Object.fromEntries(FACTIONS.map((f) => [f.id, f]));
+const MAX_PLAYERS = 6;
 const emptyGameRow = () => ({ playerId: "", faction: "" });
 
 type Player = { id: string; name: string; claimedBy?: { id: string; name: string; image: string } | null };
@@ -182,7 +183,7 @@ export default function GroupLeaderboard({
 
   const [gameDate, setGameDate] = useState(new Date().toISOString().slice(0, 10));
   const [victoryType, setVictoryType] = useState("Score (30pts)");
-  const [gameRows, setGameRows] = useState([emptyGameRow(), emptyGameRow()]);
+  const [gameRows, setGameRows] = useState([emptyGameRow(), emptyGameRow(), emptyGameRow(), emptyGameRow()]);
   const [winnerId, setWinnerId] = useState(0);
   const [winnerIds, setWinnerIds] = useState<number[]>([]);
   const [isVirtual, setIsVirtual] = useState(true);
@@ -291,7 +292,7 @@ export default function GroupLeaderboard({
   function resetForm() {
     setGameDate(new Date().toISOString().slice(0, 10));
     setVictoryType("Score (30pts)");
-    setGameRows([emptyGameRow(), emptyGameRow()]);
+    setGameRows([emptyGameRow(), emptyGameRow(), emptyGameRow(), emptyGameRow()]);
     setWinnerId(0);
     setWinnerIds([]);
     setIsVirtual(true);
@@ -695,7 +696,9 @@ export default function GroupLeaderboard({
                     </div>
                   ))}
                 </div>
-                <button className="add-player-btn" onClick={addGameRow}>+ Add Player</button>
+                {gameRows.length < MAX_PLAYERS && (
+                  <button className="add-player-btn" onClick={addGameRow}>+ Add Player</button>
+                )}
               </div>
 
               <div className="winner-select-section">
