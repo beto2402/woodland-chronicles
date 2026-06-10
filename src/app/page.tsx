@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 
@@ -27,7 +27,14 @@ const styles = `
   .user-name { font-size: 0.82rem; color: #a0b090; }
   .btn-signout { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 4px 10px; transition: all 0.15s; }
   .btn-signout:hover { border-color: #8b3a1a; color: #8b3a1a; }
+  .group-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
+  .group-item { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.88rem; padding: 10px 14px; text-align: left; transition: border-color 0.15s; display: flex; align-items: center; justify-content: space-between; }
+  .group-item:hover { border-color: #c9922a; }
+  .group-item-name { font-weight: 700; }
+  .group-item-code { font-size: 0.72rem; color: #5a6a4a; letter-spacing: 0.1em; }
 `;
+
+type Group = { id: string; name: string; joinCode: string };
 
 export default function HomePage() {
   const router = useRouter();
@@ -37,6 +44,21 @@ export default function HomePage() {
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [groups, setGroups] = useState<Group[] | null>(null);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/groups")
+      .then((r) => r.json())
+      .then((data: Group[]) => {
+        if (data.length === 1) {
+          router.replace(`/g/${data[0].joinCode}`);
+        } else {
+          setGroups(data);
+        }
+      })
+      .catch(() => setGroups([]));
+  }, [status, router]);
 
   async function createGroup() {
     setError("");
@@ -62,7 +84,7 @@ export default function HomePage() {
     if (code) router.push(`/g/${code}`);
   }
 
-  if (status === "loading" || !session) {
+  if (status === "loading" || !session || (status === "authenticated" && groups === null)) {
     return (
       <>
         <style>{styles}</style>
@@ -112,6 +134,21 @@ export default function HomePage() {
             <span className="user-name">{session.user?.name ?? session.user?.email}</span>
             <button className="btn-signout" onClick={() => signOut()}>Sign out</button>
           </div>
+          {groups && groups.length > 1 && (
+            <>
+              <div className="section-title">Your Groups</div>
+              <div className="group-list">
+                {groups.map((g) => (
+                  <button key={g.id} className="group-item" onClick={() => router.push(`/g/${g.joinCode}`)}>
+                    <span className="group-item-name">{g.name}</span>
+                    <span className="group-item-code">{g.joinCode}</span>
+                  </button>
+                ))}
+              </div>
+              <hr className="divider" />
+            </>
+          )}
+
           <div className="section-title">Create a New Group</div>
           <div className="field">
             <label className="field-label">Group Name</label>

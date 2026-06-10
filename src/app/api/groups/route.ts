@@ -3,6 +3,30 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { nanoid } from "@/lib/nanoid";
 
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: {
+      claimedPlayer: {
+        include: {
+          groups: {
+            include: { group: true },
+            orderBy: { joinedAt: "asc" },
+          },
+        },
+      },
+    },
+  });
+
+  const groups = user?.claimedPlayer?.groups.map((gp) => gp.group) ?? [];
+  return NextResponse.json(groups);
+}
+
 export async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
