@@ -9,7 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "next": "16.3.0-preview.0",
+    "@auth/prisma-adapter": "^2.11.2",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/client": "^5.22.0",
+    "next": "^15.5.19",
+    "next-auth": "^5.0.0-beta.31",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },
@@ -18,7 +22,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.0-preview.0",
+    "eslint-config-next": "^15.5.19",
+    "prisma": "^5.22.0",
     "typescript": "^5"
   }
 }

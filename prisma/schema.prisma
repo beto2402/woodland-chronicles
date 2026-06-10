@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── NextAuth ─────────────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum VictoryType {
+  SCORE
+  DOMINATION
+  COALITION
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?   // Google display name, not their Root username
+  image         String?
+  createdAt     DateTime  @default(now())
+
+  accounts      Account[]
+  sessions      Session[]
+  claimedPlayer Player?
+  loggedGames   Game[]   @relation("LoggedBy")
+}
+
+// Root player identity — global, not per-group
+model Player {
+  id        String   @id @default(cuid())
+  name      String   // globally unique, case-insensitive — enforced by lower(name) index in DB
+  createdAt DateTime @default(now())
+
+  claimedById String? @unique // one user per player, one player per user
+  claimedBy   User?   @relation(fields: [claimedById], references: [id], onDelete: SetNull)
+
+  groups      GroupPlayer[]
+  gamePlayers GamePlayer[]
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  joinCode  String   @unique // 8-char random alphanumeric, set on creation
+  createdAt DateTime @default(now())
+
+  players GroupPlayer[]
+  games   Game[]
+}
+
+// Roster: which Players belong to which Group, and their role in it
+model GroupPlayer {
+  groupId  String
+  playerId String
+  role     Role     @default(MEMBER)
+  joinedAt DateTime @default(now())
+
+  group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, playerId])
+}
+
+model Game {
+  id             String      @id @default(cuid())
+  groupId        String
+  date           DateTime    @db.Date
+  victoryType    VictoryType
+  isVirtual      Boolean     @default(true)
+  hasHirelings   Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  loggedByUserId String?     // SetNull on user delete so games are preserved
+
+  group    Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  loggedBy User?        @relation("LoggedBy", fields: [loggedByUserId], references: [id], onDelete: SetNull)
+  players  GamePlayer[]
+}
+
+// All participants in a game; isWinner marks 1 (normal) or 2 (coalition) winners
+model GamePlayer {
+  id       String  @id @default(cuid())
+  gameId   String
+  playerId String
+  faction  String  // validated at app layer; string to accommodate future expansions
+  isWinner Boolean @default(false)
+
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+}
