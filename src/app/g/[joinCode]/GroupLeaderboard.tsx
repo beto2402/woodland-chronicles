@@ -62,8 +62,11 @@ async function analyzeScreenshot(file: File): Promise<{ names: string[]; faction
   ctx.drawImage(bitmap, 0, 0, W, H);
 
   // Lazy-load Tesseract — downloads worker + eng model on first use (~15 MB, then cached).
-  const { createWorker } = await import("tesseract.js");
+  const { createWorker, PSM } = await import("tesseract.js");
   const worker = await createWorker("eng");
+  // PSM.SPARSE_TEXT: finds text anywhere without assuming a document layout.
+  // Essential for game screenshots where names are scattered across colored banners.
+  await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
   const { data } = await worker.recognize(canvas);
   await worker.terminate();
 
@@ -74,20 +77,21 @@ async function analyzeScreenshot(file: File): Promise<{ names: string[]; faction
       par.lines.flatMap((ln) => ln.words as TWord[])
     )
   );
-  const valid = allWords.filter((w) => w.confidence > 55 && /\w/.test(w.text) && w.text.trim().length >= 2);
+  // Low confidence threshold — game fonts score poorly vs. document text even when correct.
+  const valid = allWords.filter((w) => w.confidence > 30 && /\w/.test(w.text));
 
-  // Cluster words by Y centroid within ±20px tolerance.
+  // Cluster words by Y centroid within ±30px tolerance.
   const clusters = new Map<number, TWord[]>();
   for (const word of valid) {
     const cy = Math.round((word.bbox.y0 + word.bbox.y1) / 2);
-    const existing = [...clusters.keys()].find((k) => Math.abs(k - cy) <= 20);
+    const existing = [...clusters.keys()].find((k) => Math.abs(k - cy) <= 30);
     const key = existing ?? cy;
     if (!clusters.has(key)) clusters.set(key, []);
     clusters.get(key)!.push(word);
   }
 
-  // Best candidate: in bottom 40% of image, has ≥2 words, spans the widest horizontal range.
-  const bannerY = H * 0.60;
+  // Best candidate: in bottom 50% of image, has ≥2 words, spans the widest horizontal range.
+  const bannerY = H * 0.50;
   const candidates = [...clusters.entries()]
     .filter(([y, ws]) => y > bannerY && ws.length >= 2)
     .sort((a, b) => {
