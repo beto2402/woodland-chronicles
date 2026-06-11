@@ -10,7 +10,14 @@
       "Bash(curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh)",
       "Bash(bash)",
       "Bash(mkdir /tmp/wc-backup)",
-      "Bash(mv /home/david/woodland-chronicles/root-leaderboard.jsx /home/david/woodland-chronicles/ROOT_LEADERBOARD_SUMMARY.md /home/david/woodland-chronicles/schema.prisma /tmp/wc-backup/)"
+      "Bash(mv /home/david/woodland-chronicles/root-leaderboard.jsx /home/david/woodland-chronicles/ROOT_LEADERBOARD_SUMMARY.md /home/david/woodland-chronicles/schema.prisma /tmp/wc-backup/)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(command -v python3)",
+      "Bash(echo \"python3: $\\(command -v python3 || echo no\\)\")",
+      "Bash(command -v pip3)",
+      "Bash(echo \"pip3: $\\(command -v pip3 || echo no\\)\")",
+      "Bash(command -v uv)"
     ]
   }
 }

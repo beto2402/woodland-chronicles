@@ -5,8 +5,8 @@ import { VictoryType } from "@prisma/client";
 
 const VALID_FACTIONS = new Set([
   "marquise", "eyrie", "alliance", "vagabond", "vagabond2", "riverfolk",
-  "lizard", "duchy", "corvid", "lord", "keepers", "knaves", "marauder",
-  "warlord", "bandits", "exile",
+  "lizard", "duchy", "corvid", "lord", "keepers", "knaves",
+  "lilypad", "twilight",
 ]);
 
 const VAGABOND_FACTIONS = new Set(["vagabond", "vagabond2"]);

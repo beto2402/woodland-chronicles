@@ -29,20 +29,24 @@ The core UI. Fetches roster and games from API on load.
 - Signed in, not member → Sign out button + Join banner
 - Signed in, member → Player name badge + Sign out button
 
-**Roster panel:**
+**Roster panel** (members only — the "Roster" heading and "manage" toggle render only when `isMember` is true; non-members and signed-out visitors don't see it):
 - Shows all players in the group
 - "you" badge on claimed player matching the signed-in user
 - Claim button on unclaimed players (only if user has no claimed player yet)
 - Unlink button on your own claimed player
 - "claimed" badge on players claimed by others
+- Add/remove roster controls (membership is also enforced server-side on the roster POST/DELETE routes)
 
 **Game log panel:**
 - Lists all games newest first
-- Delete button visible to: the user who logged it OR group ADMINs
+- Delete button visible to: the user who logged it OR group ADMINs. Clicking it swaps the ✕ for an inline "Delete? Yes / No" confirmation (tracked by `confirmDeleteId`) — deletion only happens on "Yes", guarding against accidental clicks
 - Log Game form (members only):
   - Date, Virtual/In-Person toggle, Hirelings toggle
   - Victory type: Score / Domination / Coalition
   - Player rows: name (from roster), faction, winner checkbox
+  - Faction field is a type-to-filter combobox (`FactionSelect`): focus shows the full list, typing filters by name/id, arrow keys + Enter to select, click-outside/Escape to close
+
+**Faction icons:** every place a faction is shown (combobox + selected value, leaderboard faction tags, top-faction stat card, battle-log winner/player chips) renders the `FactionIcon` component — character art from `public/art/icons/<factionId>.webp` (64×64 trimmed/centered icons derived from the full-size `public/art/character-<factionId>.png`). These replaced the old emoji symbols. The `symbol` field still exists on each `FACTIONS` entry but is no longer rendered.
   - Coalition validation: enforces Vagabond in game + Vagabond is winner
 
 **Leaderboard panel:**

@@ -33,6 +33,21 @@ export async function POST(req: Request, { params }: Params) {
   const group = await prisma.group.findUnique({ where: { joinCode } });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 
+  // Only group members can edit the roster
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { claimedPlayer: true },
+  });
+  if (!user?.claimedPlayer) {
+    return NextResponse.json({ error: "You must claim a player before editing the roster" }, { status: 403 });
+  }
+  const membership = await prisma.groupPlayer.findUnique({
+    where: { groupId_playerId: { groupId: group.id, playerId: user.claimedPlayer.id } },
+  });
+  if (!membership) {
+    return NextResponse.json({ error: "You are not a member of this group" }, { status: 403 });
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     let player = await tx.player.findFirst({ where: { name: { equals: playerName.trim(), mode: "insensitive" } } });
 
