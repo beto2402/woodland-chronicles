@@ -67,7 +67,8 @@ async function analyzeScreenshot(file: File): Promise<{ names: string[]; faction
   // PSM.SPARSE_TEXT: finds text anywhere without assuming a document layout.
   // Essential for game screenshots where names are scattered across colored banners.
   await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
-  const { data } = await worker.recognize(canvas);
+  // blocks:true is required — without it data.blocks is always null regardless of PSM.
+  const { data } = await worker.recognize(canvas, {}, { blocks: true });
   await worker.terminate();
 
   // Flatten block → paragraph → line → word tree into a single word list.
@@ -77,8 +78,11 @@ async function analyzeScreenshot(file: File): Promise<{ names: string[]; faction
       par.lines.flatMap((ln) => ln.words as TWord[])
     )
   );
-  // Low confidence threshold — game fonts score poorly vs. document text even when correct.
-  const valid = allWords.filter((w) => w.confidence > 30 && /\w/.test(w.text));
+  // Keep words with ≥2 alphabetic characters — drops pure numbers/symbols (score badges,
+  // UI elements) while keeping names that mix letters and digits (e.g. "8vius").
+  const valid = allWords.filter(
+    (w) => w.confidence > 30 && (w.text.match(/[a-zA-Z]/g) ?? []).length >= 2
+  );
 
   // Cluster words by Y centroid within ±30px tolerance.
   const clusters = new Map<number, TWord[]>();
