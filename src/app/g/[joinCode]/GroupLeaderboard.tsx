@@ -29,16 +29,16 @@ const emptyGameRow = () => ({ playerId: "", faction: "" });
 // Calibrated from 52 winning screenshots. Knaves/Lilypad/Twilight are physical-only
 // expansions not available in the digital game and are excluded.
 const FACTION_REF_COLORS: Record<string, [number, number, number]> = {
-  marquise:  [221, 116,  37],  // orange — measured from winner screenshots
-  eyrie:     [ 52,  77, 119],  // blue — measured
-  alliance:  [ 16, 131,  60],  // green — 5 consistent samples
-  vagabond:  [ 86,  86,  86],  // gray — 3 identical samples
-  riverfolk: [ 48, 160, 168],  // teal — original estimate
-  lizard:    [124, 124,  50],  // olive — 2 identical samples
-  duchy:     [154, 104,  64],  // warm brown — original estimate
-  corvid:    [126,  95, 151],  // purple — measured
-  lord:      [150,   4,  18],  // crimson — 2 consistent samples
-  keepers:   [ 70, 104, 128],  // steel blue — measured
+  marquise:  [222, 121,  40],  // orange — avg of 2 winner samples (below-text)
+  eyrie:     [ 60,  87, 132],  // blue — 2 identical samples
+  alliance:  [ 19, 146,  67],  // green — 6 consistent samples
+  vagabond:  [ 97,  94,  95],  // gray — 4 identical samples
+  riverfolk: [ 68, 151, 144],  // teal — 1 clean winner sample (#27)
+  lizard:    [136, 136,  56],  // olive — avg of 3 samples
+  duchy:     [154, 104,  64],  // warm brown — original estimate (no reliable winner data)
+  corvid:    [140, 108, 168],  // purple — 2 consistent samples
+  lord:      [165,   5,  23],  // crimson — avg of 3 consistent samples
+  keepers:   [ 79, 117, 143],  // steel blue — 1 winner sample
 };
 
 function rgbDist(a: [number, number, number], b: [number, number, number]) {
