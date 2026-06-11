@@ -48,6 +48,20 @@ function rgbDist(a: [number, number, number], b: [number, number, number]) {
   return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2);
 }
 
+function levenshtein(a: string, b: string): number {
+  const row = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = i;
+    for (let j = 1; j <= b.length; j++) {
+      const next = a[i-1] === b[j-1] ? row[j-1] : 1 + Math.min(prev, row[j], row[j-1]);
+      row[j-1] = prev;
+      prev = next;
+    }
+    row[b.length] = prev;
+  }
+  return row[b.length];
+}
+
 // OCR-based screenshot analysis: finds all text bounding boxes, clusters by Y position
 // to identify the names row (all player names are on the same horizontal band), then
 // samples the banner color below each name for faction matching.
@@ -134,7 +148,10 @@ async function analyzeScreenshot(file: File): Promise<{ names: string[]; faction
       const d = rgbDist(color, ref);
       if (d < bestD) { bestD = d; best = id; }
     }
-    used.add(best);
+    // Reject if no reference is close enough — better to leave blank than guess wrong.
+    // Max legitimate distance in validation was 52; 80 gives a comfortable margin.
+    if (bestD > 80) best = "";
+    if (best) used.add(best);
     return best;
   });
 
@@ -517,11 +534,23 @@ export default function GroupLeaderboard({
       }
       const count = Math.max(2, Math.min(MAX_PLAYERS, names.length));
       setGameRows(
-        Array.from({ length: count }, (_, i) => ({
-          // Exact case-insensitive match against roster; fall back to OCR text (for free-text mode)
-          playerId: rosterNames.find((n) => n.toLowerCase() === names[i]?.toLowerCase()) ?? names[i] ?? "",
-          faction: factions[i] ?? "",
-        }))
+        Array.from({ length: count }, (_, i) => {
+          const ocrName = names[i]?.toLowerCase() ?? "";
+          // Fuzzy match OCR name against roster: exact first, then nearest by edit distance.
+          // Threshold: 35% of the shorter string's length (min 2) to handle OCR noise.
+          const exact = rosterNames.find((n) => n.toLowerCase() === ocrName);
+          let playerId = exact ?? "";
+          if (!playerId && ocrName) {
+            let bestName = "", bestDist = Infinity;
+            for (const n of rosterNames) {
+              const d = levenshtein(ocrName, n.toLowerCase());
+              if (d < bestDist) { bestDist = d; bestName = n; }
+            }
+            const threshold = Math.max(2, Math.round(Math.min(ocrName.length, bestName.length) * 0.35));
+            if (bestDist <= threshold) playerId = bestName;
+          }
+          return { playerId, faction: factions[i] ?? "" };
+        })
       );
       setWinnerId(0);
       setWinnerIds([]);
