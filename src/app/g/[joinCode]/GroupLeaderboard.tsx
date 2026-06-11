@@ -26,22 +26,19 @@ const MAX_PLAYERS = 6;
 const emptyGameRow = () => ({ playerId: "", faction: "" });
 
 // Reference banner colors from the Root digital app (Dire Wolf Digital).
-// Used for screenshot faction detection — nearest-neighbor RGB match.
+// Calibrated from 52 winning screenshots. Knaves/Lilypad/Twilight are physical-only
+// expansions not available in the digital game and are excluded.
 const FACTION_REF_COLORS: Record<string, [number, number, number]> = {
-  marquise:  [224, 144,  32],
-  eyrie:     [ 40, 120, 200],
-  alliance:  [ 76, 136,  56],
-  vagabond:  [136, 120, 104],
-  vagabond2: [120, 104,  88],
-  riverfolk: [ 48, 160, 168],
-  lizard:    [200, 176,  48],
-  duchy:     [154, 104,  64],
-  corvid:    [ 88,  56, 128],
-  lord:      [200,  40,  40],
-  keepers:   [ 96, 120, 128],
-  knaves:    [ 74,  96,  48],
-  lilypad:   [ 56, 168, 136],
-  twilight:  [104,  88, 200],
+  marquise:  [221, 116,  37],  // orange — measured from winner screenshots
+  eyrie:     [ 52,  77, 119],  // blue — measured
+  alliance:  [ 16, 131,  60],  // green — 5 consistent samples
+  vagabond:  [ 86,  86,  86],  // gray — 3 identical samples
+  riverfolk: [ 48, 160, 168],  // teal — original estimate
+  lizard:    [124, 124,  50],  // olive — 2 identical samples
+  duchy:     [154, 104,  64],  // warm brown — original estimate
+  corvid:    [126,  95, 151],  // purple — measured
+  lord:      [150,   4,  18],  // crimson — 2 consistent samples
+  keepers:   [ 70, 104, 128],  // steel blue — measured
 };
 
 function rgbDist(a: [number, number, number], b: [number, number, number]) {
@@ -78,10 +75,10 @@ async function analyzeScreenshot(file: File): Promise<{ names: string[]; faction
       par.lines.flatMap((ln) => ln.words as TWord[])
     )
   );
-  // Keep words with ≥2 alphabetic characters — drops pure numbers/symbols (score badges,
-  // UI elements) while keeping names that mix letters and digits (e.g. "8vius").
+  // Keep words with ≥3 alphabetic characters — drops pure numbers/symbols and 2-letter
+  // OCR artifacts ("NA", "NZ") from score-circle laurel decoration.
   const valid = allWords.filter(
-    (w) => w.confidence > 30 && (w.text.match(/[a-zA-Z]/g) ?? []).length >= 2
+    (w) => w.confidence > 30 && (w.text.match(/[a-zA-Z]/g) ?? []).length >= 3
   );
 
   // Cluster words by Y centroid within ±30px tolerance.
