@@ -70,13 +70,13 @@ Returns group details including roster with claim info.
 ### `POST /api/groups/[joinCode]/roster`
 Adds a player to the group roster (without joining as the current user).
 
-**Auth:** required, must be a group member  
+**Auth:** required, must be a group member (caller has a claimed player on this group's roster — 403 otherwise)  
 **Body:** `{ playerName: string }`
 
 ### `DELETE /api/groups/[joinCode]/roster/[playerName]`
 Removes a player from the roster.
 
-**Auth:** required, must be a group member  
+**Auth:** required, must be a group member (403 otherwise)  
 **Rules:** Cannot remove a claimed player
 
 ---
@@ -123,7 +123,7 @@ Logs a new game.
 - 2–6 players (Root's official range, including all expansions)
 - Exactly 1 winner (SCORE/DOMINATION) or exactly 2 winners (COALITION)
 - COALITION requires a Vagabond faction in the game and Vagabond must be a winner
-- Valid factions: `marquise`, `eyrie`, `alliance`, `vagabond`, `vagabond2`, `riverfolk`, `lizard`, `duchy`, `corvid`, `lord`, `keepers`, `knaves`, `marauder`, `warlord`, `bandits`, `exile`
+- Valid factions (the official Root factions, incl. the latest expansion's Knaves of the Deepwood, Lilypad Diaspora, and Twilight Council): `marquise`, `eyrie`, `alliance`, `vagabond`, `vagabond2`, `riverfolk`, `lizard`, `duchy`, `corvid`, `lord`, `keepers`, `knaves`, `lilypad`, `twilight`
 
 ### `DELETE /api/groups/[joinCode]/games/[id]`
 Deletes a game.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 
 const FACTIONS = [
@@ -15,11 +15,9 @@ const FACTIONS = [
   { id: "corvid", name: "Corvid Conspiracy", symbol: "🐦‍⬛", color: "#5a3a7a" },
   { id: "lord", name: "Lord of the Hundreds", symbol: "🐀", color: "#b03030" },
   { id: "keepers", name: "Keepers in Iron", symbol: "⚔️", color: "#708090" },
-  { id: "knaves", name: "Knaves of the Deepwood", symbol: "🗡️", color: "#4a6040" },
-  { id: "marauder", name: "Marauder", symbol: "🏹", color: "#a05030" },
-  { id: "warlord", name: "Warlord", symbol: "🛡️", color: "#8b0000" },
-  { id: "bandits", name: "Bandit Gangs", symbol: "💰", color: "#b8860b" },
-  { id: "exile", name: "Exile", symbol: "🌑", color: "#2c2c4a" },
+  { id: "knaves", name: "Knaves of the Deepwood", symbol: "🦨", color: "#4a6040" },
+  { id: "lilypad", name: "Lilypad Diaspora", symbol: "🐸", color: "#3fa98c" },
+  { id: "twilight", name: "Twilight Council", symbol: "🦇", color: "#6a5acd" },
 ];
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
@@ -43,6 +41,11 @@ type Game = {
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Scale the whole type system up ~14% so base body text reads at ~1rem (16px);
+     every font-size here is rem/em, so this bumps them all proportionally. */
+  html { font-size: 114%; }
+  /* Section/label accent — orange instead of brick-red for color-blind legibility on green. */
+  :root { --accent-label: #e08a3a; }
   body { background: #0f1a0f; }
   .app { min-height: 100vh; background: #0f1a0f; color: #f2e8d0; font-family: 'Lato', sans-serif; padding: 0 0 60px; }
 
@@ -54,7 +57,7 @@ const styles = `
   .join-code span { color: #c9922a; letter-spacing: 0.25em; }
 
   .container { max-width: 780px; margin: 0 auto; padding: 0 16px; }
-  .section-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: #8b3a1a; text-transform: uppercase; margin: 32px 0 12px; }
+  .section-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--accent-label); text-transform: uppercase; margin: 32px 0 12px; }
 
   .leaderboard { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; overflow: hidden; }
   .lb-row { display: grid; grid-template-columns: 36px 1fr 90px 60px 60px; gap: 0; align-items: center; padding: 10px 16px; border-bottom: 1px solid #1e2e1e; transition: background 0.15s; }
@@ -68,32 +71,58 @@ const styles = `
   .player-info { display: flex; flex-direction: column; gap: 2px; }
   .player-name { font-weight: 700; font-size: 0.95rem; color: #f2e8d0; }
   .faction-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
-  .faction-tag { font-size: 0.6rem; padding: 1px 6px; border-radius: 2px; border: 1px solid; opacity: 0.85; font-family: 'Lato', sans-serif; letter-spacing: 0.05em; }
+  .faction-tag { font-size: 0.6rem; padding: 1px 6px 1px 3px; border-radius: 2px; border: 1px solid; opacity: 0.85; font-family: 'Lato', sans-serif; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 3px; }
   .stat { text-align: center; font-size: 0.88rem; }
   .stat-wins { color: #c9922a; font-weight: 700; font-size: 1rem; }
   .stat-games { color: #7a8a6a; }
   .stat-pct { color: #a0b090; font-size: 0.8rem; }
   .empty-state { padding: 40px 16px; text-align: center; color: #5a6a4a; font-style: italic; font-size: 0.9rem; }
 
+  .page-loader { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 90px 16px; }
+  .spinner { width: 38px; height: 38px; border: 3px solid #2d3b2d; border-top-color: #c9922a; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.22em; color: #8a7a5a; text-transform: uppercase; }
+
   .game-log { display: flex; flex-direction: column; gap: 8px; }
   .game-card { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
   .game-date { font-size: 0.7rem; color: #5a6a4a; font-family: 'Cinzel', serif; letter-spacing: 0.1em; white-space: nowrap; flex-shrink: 0; }
-  .game-winner { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .winner-label { font-size: 0.62rem; letter-spacing: 0.18em; color: #8b3a1a; text-transform: uppercase; font-family: 'Cinzel', serif; }
-  .winner-name { font-weight: 700; font-size: 0.95rem; color: #c9922a; }
-  .winner-faction { font-size: 0.78rem; color: #a0b090; }
-  .game-players { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 260px; flex-shrink: 0; }
-  .player-chip { font-size: 0.65rem; padding: 2px 7px; background: #152515; border: 1px solid #2d3b2d; border-radius: 2px; color: #a0b090; white-space: nowrap; }
+  .game-winner { flex: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .winner-label { font-size: 0.62rem; letter-spacing: 0.18em; color: var(--accent-label); text-transform: uppercase; font-family: 'Cinzel', serif; }
+  .winner-entry { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 16px; padding: 2px 0; }
+  .winner-name { font-weight: 700; font-size: 1.1rem; line-height: 1.2; color: #c9922a; }
+  .winner-faction { font-size: 0.92rem; color: #a0b090; display: inline-flex; align-items: center; gap: 8px; }
+  .game-players { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; max-width: 330px; flex-shrink: 0; }
+  .player-chip { font-size: 0.82rem; padding: 5px 10px 5px 6px; background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
   .delete-btn { background: none; border: none; color: #3a4a3a; cursor: pointer; font-size: 1rem; padding: 4px; line-height: 1; transition: color 0.15s; flex-shrink: 0; }
   .delete-btn:hover { color: #8b3a1a; }
+  .confirm-delete { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .confirm-text { font-size: 0.72rem; color: #f2a866; white-space: nowrap; }
+  .confirm-yes { background: #8b3a1a; border: none; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 4px 10px; transition: background 0.15s; }
+  .confirm-yes:hover { background: #a04520; }
+  .confirm-no { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 4px 10px; transition: all 0.15s; }
+  .confirm-no:hover { border-color: #5a6a4a; color: #f2e8d0; }
 
+  /* Error/validation/notice messages — dark box for strong contrast (color-blind friendly). */
+  .notice { font-size: 0.8rem; line-height: 1.4; color: #f2a866; background: #0a110a; border: 1px solid #2a2114; border-left: 3px solid var(--accent-label); border-radius: 3px; padding: 8px 11px; }
   .form-card { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 20px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .field { display: flex; flex-direction: column; gap: 5px; }
-  .field-label { font-size: 0.62rem; letter-spacing: 0.2em; color: #8b3a1a; text-transform: uppercase; font-family: 'Cinzel', serif; }
+  .field-label { font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent-label); text-transform: uppercase; font-family: 'Cinzel', serif; }
   .field input, .field select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.88rem; padding: 8px 10px; outline: none; transition: border-color 0.15s; width: 100%; -webkit-appearance: none; }
   .field input:focus, .field select:focus { border-color: #c9922a; }
   .field select option { background: #1a2e1a; }
+
+  .combobox { position: relative; width: 100%; }
+  .combobox-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); pointer-events: none; display: flex; }
+  .combobox-input { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.88rem; padding: 8px 10px; outline: none; transition: border-color 0.15s; width: 100%; }
+  .combobox-input:focus { border-color: #c9922a; }
+  .combobox-input::placeholder { color: #5a6a4a; }
+  .combobox-list { position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 20; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 3px; max-height: 220px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
+  .combobox-option { padding: 8px 10px; font-size: 0.85rem; color: #d8e0c8; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+  .combobox-option.active { background: #1e341e; }
+  .combobox-option.selected { color: #c9922a; }
+  .combobox-empty { padding: 8px 10px; font-size: 0.8rem; color: #5a6a4a; font-style: italic; }
+
   .players-section { margin-top: 16px; }
   .players-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
   .player-row { display: grid; grid-template-columns: 1fr 1fr 32px; gap: 8px; align-items: center; }
@@ -144,14 +173,14 @@ const styles = `
   .btn-auth:hover { border-color: #c9922a; color: #c9922a; }
 
   .join-banner { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 16px 20px; margin: 24px 0 0; display: flex; flex-direction: column; gap: 10px; }
-  .join-banner-title { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: #8b3a1a; text-transform: uppercase; }
+  .join-banner-title { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--accent-label); text-transform: uppercase; }
   .join-banner-row { display: flex; gap: 8px; align-items: center; }
   .join-banner-row input { flex: 1; background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.88rem; padding: 8px 10px; outline: none; transition: border-color 0.15s; }
   .join-banner-row input:focus { border-color: #c9922a; }
 
   @media (max-width: 500px) {
     .form-grid { grid-template-columns: 1fr; }
-    .game-players { max-width: 140px; }
+    .game-players { max-width: 170px; }
     .lb-row { grid-template-columns: 28px 1fr 70px 50px 50px; }
     .player-row { grid-template-columns: 1fr 1fr 32px; }
   }
@@ -161,6 +190,93 @@ function getFactionStyle(factionId: string) {
   const f = FACTION_MAP[factionId];
   if (!f) return {};
   return { color: f.color, borderColor: f.color + "55" };
+}
+
+// Small faction character art, used in place of the old emoji symbols.
+function FactionIcon({ id, size = 20 }: { id: string; size?: number }) {
+  const f = FACTION_MAP[id];
+  if (!f) return null;
+  return (
+    <img
+      src={`/art/icons/${id}.webp`}
+      alt={f.name}
+      width={size}
+      height={size}
+      loading="lazy"
+      style={{ width: size, height: size, objectFit: "contain", verticalAlign: "middle", display: "inline-block", flexShrink: 0 }}
+    />
+  );
+}
+
+// Type-to-filter faction picker. Falls back to showing the full list on focus.
+function FactionSelect({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const selected = FACTION_MAP[value];
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? FACTIONS.filter((f) => f.name.toLowerCase().includes(q) || f.id.includes(q))
+    : FACTIONS;
+
+  useEffect(() => {
+    function onDocMouseDown(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    }
+    document.addEventListener("mousedown", onDocMouseDown);
+    return () => document.removeEventListener("mousedown", onDocMouseDown);
+  }, []);
+
+  function pick(id: string) {
+    onChange(id);
+    setOpen(false);
+    setQuery("");
+  }
+
+  return (
+    <div className="combobox" ref={ref}>
+      {!open && selected && (
+        <span className="combobox-icon"><FactionIcon id={selected.id} size={30} /></span>
+      )}
+      <input
+        className="combobox-input"
+        placeholder="— Faction —"
+        style={!open && selected ? { paddingLeft: 46 } : undefined}
+        value={open ? query : selected ? selected.name : ""}
+        onChange={(e) => { setQuery(e.target.value); setActive(0); if (!open) setOpen(true); }}
+        onFocus={() => { setOpen(true); setQuery(""); setActive(0); }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") { e.preventDefault(); setOpen(true); setActive((a) => Math.min(a + 1, filtered.length - 1)); }
+          else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
+          else if (e.key === "Enter") { e.preventDefault(); if (filtered[active]) { pick(filtered[active].id); e.currentTarget.blur(); } }
+          else if (e.key === "Escape") { setOpen(false); setQuery(""); }
+        }}
+      />
+      {open && (
+        <div className="combobox-list">
+          {filtered.length === 0 ? (
+            <div className="combobox-empty">No factions match</div>
+          ) : (
+            filtered.map((f, i) => (
+              <div
+                key={f.id}
+                className={`combobox-option ${i === active ? "active" : ""} ${f.id === value ? "selected" : ""}`}
+                onMouseEnter={() => setActive(i)}
+                onMouseDown={(e) => { e.preventDefault(); pick(f.id); }}
+              >
+                <FactionIcon id={f.id} size={34} /> {f.name}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function GroupLeaderboard({
@@ -177,6 +293,7 @@ export default function GroupLeaderboard({
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [joinName, setJoinName] = useState("");
   const [joinError, setJoinError] = useState("");
   const [newPlayerName, setNewPlayerName] = useState("");
@@ -402,6 +519,13 @@ export default function GroupLeaderboard({
         </div>
 
         <div className="container">
+          {loading ? (
+            <div className="page-loader">
+              <div className="spinner" />
+              <div className="loader-text">Loading the chronicles…</div>
+            </div>
+          ) : (
+          <>
           {games.length > 0 && (
             <>
               <div className="section-label">Chronicle</div>
@@ -415,7 +539,7 @@ export default function GroupLeaderboard({
                   <div className="stat-card-label">Denizens</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-card-value">{topFaction ? topFaction.symbol : "—"}</div>
+                  <div className="stat-card-value">{topFaction && topFactionId ? <FactionIcon id={topFactionId} size={60} /> : "—"}</div>
                   <div className="stat-card-label">{topFaction ? "Top Faction" : "No Data"}</div>
                 </div>
               </div>
@@ -445,7 +569,7 @@ export default function GroupLeaderboard({
                       Join &amp; Claim
                     </button>
                   </div>
-                  {joinError && <div style={{ fontSize: "0.75rem", color: "#8b3a1a" }}>{joinError}</div>}
+                  {joinError && <div className="notice">{joinError}</div>}
                 </div>
               )}
             </div>
@@ -460,9 +584,7 @@ export default function GroupLeaderboard({
               <span style={{ textAlign: "center" }}>Wins</span>
               <span style={{ textAlign: "center" }}>Games</span>
             </div>
-            {loading ? (
-              <div className="empty-state">Loading the chronicles…</div>
-            ) : leaderboard.length === 0 ? (
+            {leaderboard.length === 0 ? (
               <div className="empty-state">No battles recorded yet. Log a game to begin.</div>
             ) : (
               leaderboard.map((p, i) => (
@@ -475,7 +597,7 @@ export default function GroupLeaderboard({
                         const f = FACTION_MAP[fid];
                         return f ? (
                           <span key={fid} className="faction-tag" style={getFactionStyle(fid)}>
-                            {f.symbol} {f.name.split(" ")[0]}
+                            <FactionIcon id={fid} size={22} /> {f.name.split(" ")[0]}
                           </span>
                         ) : null;
                       })}
@@ -514,7 +636,7 @@ export default function GroupLeaderboard({
                             color: !g.isVirtual ? "#8ab070" : "#7ab0d0",
                             letterSpacing: "0.06em",
                           }}>
-                            {!g.isVirtual ? "🌲 In Person" : "🖥️ Virtual"}
+                            {!g.isVirtual ? "🎲 In Person" : "🖥️ Virtual"}
                           </span>
                         </div>
                         {g.hasHirelings && (
@@ -530,10 +652,10 @@ export default function GroupLeaderboard({
                         {winners.map((w) => {
                           const wf = FACTION_MAP[w.faction];
                           return (
-                            <div key={w.player.name}>
+                            <div key={w.player.name} className="winner-entry">
                               <span className="winner-name">{w.player.name}</span>
-                              <span className="winner-faction" style={{ display: "block" }}>
-                                {wf ? `${wf.symbol} ${wf.name}` : w.faction}
+                              <span className="winner-faction">
+                                {wf ? <><FactionIcon id={w.faction} size={28} /> {wf.name}</> : w.faction}
                               </span>
                             </div>
                           );
@@ -545,12 +667,20 @@ export default function GroupLeaderboard({
                           const pf = FACTION_MAP[p.faction];
                           return (
                             <span key={p.player.name} className="player-chip">
-                              {pf?.symbol} {p.player.name}
+                              {pf ? <FactionIcon id={p.faction} size={30} /> : null} {p.player.name}
                             </span>
                           );
                         })}
                       </div>
-                      <button className="delete-btn" onClick={() => deleteGame(g.id)} title="Delete">✕</button>
+                      {confirmDeleteId === g.id ? (
+                        <div className="confirm-delete">
+                          <span className="confirm-text">Delete?</span>
+                          <button className="confirm-yes" onClick={() => { deleteGame(g.id); setConfirmDeleteId(null); }}>Yes</button>
+                          <button className="confirm-no" onClick={() => setConfirmDeleteId(null)}>No</button>
+                        </div>
+                      ) : (
+                        <button className="delete-btn" onClick={() => setConfirmDeleteId(g.id)} title="Delete">✕</button>
+                      )}
                     </div>
                   );
                 })}
@@ -558,13 +688,15 @@ export default function GroupLeaderboard({
             </>
           )}
 
+          {isMember && (
           <div className="section-label" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span>Roster</span>
             <button className="roster-toggle" onClick={() => setShowRoster(!showRoster)}>
               {showRoster ? "hide" : "manage"}
             </button>
           </div>
-          {showRoster && (
+          )}
+          {isMember && showRoster && (
             <div className="form-card">
               <div className="roster-grid">
                 {roster.length === 0 ? (
@@ -614,7 +746,7 @@ export default function GroupLeaderboard({
           {showForm && (
             <div className="form-card" style={{ marginTop: 12 }}>
               {roster.length === 0 && (
-                <div style={{ fontSize: "0.78rem", color: "#8b3a1a", marginBottom: 14, padding: "8px 10px", background: "rgba(139,58,26,0.1)", borderRadius: 3, border: "1px solid #8b3a1a44" }}>
+                <div className="notice" style={{ marginBottom: 14 }}>
                   Add players to your Roster first to quickly select them here.
                 </div>
               )}
@@ -633,7 +765,7 @@ export default function GroupLeaderboard({
                 <div className="field" style={{ gridColumn: "1 / -1" }}>
                   <label className="field-label">Format</label>
                   <div style={{ display: "flex", gap: 8 }}>
-                    {([["Virtual", true, "🖥️"], ["In Person", false, "🌲"]] as const).map(([label, val, icon]) => {
+                    {([["Virtual", true, "🖥️"], ["In Person", false, "🎲"]] as const).map(([label, val, icon]) => {
                       const active = isVirtual === val;
                       return (
                         <button key={label} onClick={() => setIsVirtual(val)} style={{
@@ -685,12 +817,7 @@ export default function GroupLeaderboard({
                         )}
                       </div>
                       <div className="field">
-                        <select value={row.faction} onChange={(e) => updateGameRow(i, "faction", e.target.value)}>
-                          <option value="">— Faction —</option>
-                          {FACTIONS.map((f) => (
-                            <option key={f.id} value={f.id}>{f.symbol} {f.name}</option>
-                          ))}
-                        </select>
+                        <FactionSelect value={row.faction} onChange={(id) => updateGameRow(i, "faction", id)} />
                       </div>
                       <button className="remove-player" onClick={() => removeGameRow(i)} disabled={gameRows.length <= 2}>−</button>
                     </div>
@@ -754,17 +881,17 @@ export default function GroupLeaderboard({
               </div>
 
               {!namesUnique && (
-                <div style={{ fontSize: "0.75rem", color: "#8b3a1a", marginTop: 10 }}>
+                <div className="notice" style={{ marginTop: 10 }}>
                   Each player can only appear once per game.
                 </div>
               )}
               {isCoalition && !hasVagabondInGame && (
-                <div style={{ fontSize: "0.75rem", color: "#8b3a1a", marginTop: 10 }}>
+                <div className="notice" style={{ marginTop: 10 }}>
                   Coalition requires a Vagabond in the game.
                 </div>
               )}
               {isCoalition && hasVagabondInGame && !vagabondIsWinner && (
-                <div style={{ fontSize: "0.75rem", color: "#8b3a1a", marginTop: 10 }}>
+                <div className="notice" style={{ marginTop: 10 }}>
                   The Vagabond must be one of the coalition winners.
                 </div>
               )}
@@ -774,6 +901,8 @@ export default function GroupLeaderboard({
                 <button className="btn-primary" onClick={logGame} disabled={!formValid}>Record Battle</button>
               </div>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>
