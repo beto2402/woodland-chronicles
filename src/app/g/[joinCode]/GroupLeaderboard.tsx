@@ -28,17 +28,20 @@ const emptyGameRow = () => ({ playerId: "", faction: "" });
 // Reference banner colors from the Root digital app (Dire Wolf Digital).
 // Calibrated from 52 winning screenshots. Knaves/Lilypad/Twilight are physical-only
 // expansions not available in the digital game and are excluded.
+// Reference banner colors calibrated from 52 winning screenshots using
+// gradient-aware median sampling (skips white text + black shadow pixels).
+// Knaves/Lilypad/Twilight are physical-only, not in the digital game.
 const FACTION_REF_COLORS: Record<string, [number, number, number]> = {
-  marquise:  [222, 121,  40],  // orange — avg of 2 winner samples (below-text)
-  eyrie:     [ 60,  87, 132],  // blue — 2 identical samples
-  alliance:  [ 19, 146,  67],  // green — 6 consistent samples
-  vagabond:  [ 97,  94,  95],  // gray — 4 identical samples
-  riverfolk: [ 68, 151, 144],  // teal — 1 clean winner sample (#27)
-  lizard:    [136, 136,  56],  // olive — avg of 3 samples
-  duchy:     [154, 104,  64],  // warm brown — original estimate (no reliable winner data)
-  corvid:    [140, 108, 168],  // purple — 2 consistent samples
-  lord:      [165,   5,  23],  // crimson — avg of 3 consistent samples
-  keepers:   [ 79, 117, 143],  // steel blue — 1 winner sample
+  marquise:  [190, 114,  52],  // orange-amber — 1 winner sample
+  eyrie:     [ 57,  85, 121],  // blue — avg of 2 consistent samples
+  alliance:  [ 18, 138,  65],  // green — avg of 6 consistent samples
+  vagabond:  [ 90,  92,  90],  // gray — 4 identical samples
+  riverfolk: [ 65, 137, 132],  // teal — avg of 2 consistent samples (#27, #49)
+  lizard:    [135, 135,  46],  // olive — avg of 2 consistent samples
+  duchy:     [198, 136,  75],  // amber — avg of 2 winner samples (#23, #38)
+  corvid:    [130, 105, 152],  // purple — avg of 2 consistent samples
+  lord:      [160,   5,  22],  // crimson — avg of 2 consistent samples
+  keepers:   [ 70, 109, 138],  // steel blue — 1 winner sample
 };
 
 function rgbDist(a: [number, number, number], b: [number, number, number]) {
@@ -106,17 +109,24 @@ async function analyzeScreenshot(file: File): Promise<{ names: string[]; faction
   const nameWords = candidates[0][1].sort((a, b) => a.bbox.x0 - b.bbox.x0);
   const names = nameWords.map((w) => w.text.trim());
 
-  // Sample banner color in a strip just below each word (avoids white text pixels).
+  // Sample the median banner color over the full bounding box height of each name word.
+  // Skips near-white pixels (text) and near-black pixels (shadow/border) so the
+  // banner's gradient doesn't skew the result — only the solid faction color band counts.
   const used = new Set<string>();
   const factions = nameWords.map((word) => {
-    const patchX = Math.max(0, word.bbox.x0);
-    const patchW = Math.max(1, word.bbox.x1 - word.bbox.x0);
-    const patchY = Math.min(H - 6, word.bbox.y1 + 5);
-    const patch = ctx.getImageData(patchX, patchY, patchW, 6);
-    let r = 0, g = 0, b = 0;
-    const n = patch.data.length / 4;
-    for (let i = 0; i < patch.data.length; i += 4) { r += patch.data[i]; g += patch.data[i+1]; b += patch.data[i+2]; }
-    const color: [number, number, number] = [r/n, g/n, b/n];
+    const x0 = Math.max(0, word.bbox.x0), x1 = Math.min(W, word.bbox.x1);
+    const y0 = Math.max(0, word.bbox.y0), y1 = Math.min(H, word.bbox.y1 + 10);
+    const patch = ctx.getImageData(x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0));
+    const samples: [number, number, number][] = [];
+    for (let i = 0; i < patch.data.length; i += 4) {
+      const r = patch.data[i], g = patch.data[i+1], b = patch.data[i+2];
+      const brightness = (r + g + b) / 3;
+      if (brightness > 200 || brightness < 40) continue;
+      samples.push([r, g, b]);
+    }
+    samples.sort((a, b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
+    const mid = samples[Math.floor(samples.length / 2)] ?? [128, 128, 128];
+    const color: [number, number, number] = mid;
 
     let best = "", bestD = Infinity;
     for (const [id, ref] of Object.entries(FACTION_REF_COLORS)) {
