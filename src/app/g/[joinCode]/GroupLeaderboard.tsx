@@ -189,7 +189,8 @@ const styles = `
 function getFactionStyle(factionId: string) {
   const f = FACTION_MAP[factionId];
   if (!f) return {};
-  return { color: f.color, borderColor: f.color + "55" };
+  // Use faction color only for the border accent; keep text readable on dark backgrounds.
+  return { color: "#d8e0c8", borderColor: f.color + "88" };
 }
 
 // Small faction character art, used in place of the old emoji symbols.

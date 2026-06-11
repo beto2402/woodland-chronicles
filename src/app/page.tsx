@@ -7,13 +7,14 @@ import { useSession, signIn, signOut } from "next-auth/react";
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
 
+  :root { --accent-label: #e08a3a; }
   .home { min-height: 100vh; background: #0f1a0f; color: #f2e8d0; font-family: 'Lato', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
   .hero-title { font-family: 'Cinzel', serif; font-size: 2.2rem; font-weight: 700; letter-spacing: 0.08em; color: #c9922a; text-shadow: 0 0 40px rgba(201,146,42,0.4); text-align: center; }
   .hero-sub { font-family: 'Cinzel', serif; font-size: 0.78rem; letter-spacing: 0.22em; color: #8a7a5a; margin-top: 6px; text-transform: uppercase; text-align: center; }
   .card { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 28px 24px; width: 100%; max-width: 420px; margin-top: 40px; }
-  .section-title { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: #8b3a1a; text-transform: uppercase; margin-bottom: 16px; }
+  .section-title { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--accent-label); text-transform: uppercase; margin-bottom: 16px; }
   .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-  .field-label { font-size: 0.62rem; letter-spacing: 0.2em; color: #8b3a1a; text-transform: uppercase; font-family: 'Cinzel', serif; }
+  .field-label { font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent-label); text-transform: uppercase; font-family: 'Cinzel', serif; }
   .field input { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.88rem; padding: 8px 10px; outline: none; transition: border-color 0.15s; width: 100%; }
   .field input:focus { border-color: #c9922a; }
   .btn-primary { background: #8b3a1a; border: none; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.78rem; letter-spacing: 0.12em; padding: 10px 24px; transition: background 0.15s; text-transform: uppercase; width: 100%; margin-top: 4px; }
@@ -22,11 +23,11 @@ const styles = `
   .btn-google { background: #f2e8d0; border: none; border-radius: 3px; color: #1a1a1a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.88rem; font-weight: 700; padding: 11px 24px; transition: background 0.15s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
   .btn-google:hover { background: #fff; }
   .divider { border: none; border-top: 1px solid #2d3b2d; margin: 24px 0; }
-  .error { font-size: 0.78rem; color: #8b3a1a; margin-top: 8px; padding: 7px 10px; background: rgba(139,58,26,0.1); border-radius: 3px; border: 1px solid #8b3a1a44; }
+  .error { font-size: 0.78rem; color: #f2a866; margin-top: 8px; padding: 7px 10px 7px 13px; background: #0a110a; border-radius: 3px; border: 1px solid #2a2114; border-left: 3px solid var(--accent-label); }
   .user-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #2d3b2d; }
   .user-name { font-size: 0.82rem; color: #a0b090; }
   .btn-signout { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 4px 10px; transition: all 0.15s; }
-  .btn-signout:hover { border-color: #8b3a1a; color: #8b3a1a; }
+  .btn-signout:hover { border-color: var(--accent-label); color: var(--accent-label); }
   .group-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
   .group-item { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.88rem; padding: 10px 14px; text-align: left; transition: border-color 0.15s; display: flex; align-items: center; justify-content: space-between; }
   .group-item:hover { border-color: #c9922a; }
