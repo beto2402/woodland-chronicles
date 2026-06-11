@@ -44,102 +44,86 @@ const FACTION_REF_COLORS: Record<string, [number, number, number]> = {
   twilight:  [104,  88, 200],
 };
 
-function toHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
-  if (max === min) return [0, 0, l];
-  const d = max - min;
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-  let h = 0;
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-  else if (max === g) h = ((b - r) / d + 2) / 6;
-  else h = ((r - g) / d + 4) / 6;
-  return [h * 360, s, l];
-}
-
 function rgbDist(a: [number, number, number], b: [number, number, number]) {
   return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2);
 }
 
-async function detectFactions(file: File): Promise<string[]> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onerror = () => { URL.revokeObjectURL(url); resolve([]); };
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const scale = Math.min(1, 800 / img.width);
-      const W = Math.floor(img.width * scale);
-      const H = Math.floor(img.height * scale);
-      const canvas = document.createElement("canvas");
-      canvas.width = W; canvas.height = H;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, W, H);
+// OCR-based screenshot analysis: finds all text bounding boxes, clusters by Y position
+// to identify the names row (all player names are on the same horizontal band), then
+// samples the banner color below each name for faction matching.
+async function analyzeScreenshot(file: File): Promise<{ names: string[]; factions: string[] }> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1200 / bitmap.width);
+  const W = Math.floor(bitmap.width * scale);
+  const H = Math.floor(bitmap.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bitmap, 0, 0, W, H);
 
-      // Scan the bottom 38% — that's where the player banners live.
-      const scanY = Math.floor(H * 0.62);
-      const scanH = H - scanY;
-      const { data } = ctx.getImageData(0, scanY, W, scanH);
+  // Lazy-load Tesseract — downloads worker + eng model on first use (~15 MB, then cached).
+  const { createWorker } = await import("tesseract.js");
+  const worker = await createWorker("eng");
+  const { data } = await worker.recognize(canvas);
+  await worker.terminate();
 
-      // Per column: find the most-saturated pixel, discard if sat < 0.30.
-      type ColSample = { r: number; g: number; b: number; hue: number; sat: number };
-      const cols: (ColSample | null)[] = Array.from({ length: W }, (_, x) => {
-        let best: ColSample | null = null;
-        for (let y = 0; y < scanH; y++) {
-          const i = (y * W + x) * 4;
-          const r = data[i], g = data[i+1], b = data[i+2];
-          const [hue, sat] = toHsl(r, g, b);
-          if (sat >= 0.30 && (!best || sat > best.sat)) best = { r, g, b, hue, sat };
-        }
-        return best;
-      });
+  // Flatten block → paragraph → line → word tree into a single word list.
+  type TWord = { text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } };
+  const allWords: TWord[] = (data.blocks ?? []).flatMap((bl) =>
+    bl.paragraphs.flatMap((par) =>
+      par.lines.flatMap((ln) => ln.words as TWord[])
+    )
+  );
+  const valid = allWords.filter((w) => w.confidence > 55 && /\w/.test(w.text) && w.text.trim().length >= 2);
 
-      // Group adjacent columns by similar hue (±12°, wrap-aware).
-      type Group = { startX: number; endX: number; sum: [number,number,number]; count: number };
-      const groups: Group[] = [];
-      let cur: Group | null = null;
-      for (let x = 0; x < W; x++) {
-        const c = cols[x];
-        if (!c) { cur = null; continue; }
-        if (!cur) {
-          cur = { startX: x, endX: x, sum: [c.r, c.g, c.b], count: 1 };
-          groups.push(cur);
-        } else {
-          const prev = cols[cur.endX]!;
-          const diff = Math.abs(c.hue - prev.hue);
-          if (diff <= 12 || diff >= 348) {
-            cur.endX = x;
-            cur.sum[0] += c.r; cur.sum[1] += c.g; cur.sum[2] += c.b; cur.count++;
-          } else {
-            cur = { startX: x, endX: x, sum: [c.r, c.g, c.b], count: 1 };
-            groups.push(cur);
-          }
-        }
-      }
+  // Cluster words by Y centroid within ±20px tolerance.
+  const clusters = new Map<number, TWord[]>();
+  for (const word of valid) {
+    const cy = Math.round((word.bbox.y0 + word.bbox.y1) / 2);
+    const existing = [...clusters.keys()].find((k) => Math.abs(k - cy) <= 20);
+    const key = existing ?? cy;
+    if (!clusters.has(key)) clusters.set(key, []);
+    clusters.get(key)!.push(word);
+  }
 
-      // Keep groups spanning ≥ 8% of image width (filters score-circle badges).
-      const minW = W * 0.08;
-      const valid = groups.filter(g => (g.endX - g.startX) >= minW);
-      if (!valid.length) { resolve([]); return; }
+  // Best candidate: in bottom 40% of image, has ≥2 words, spans the widest horizontal range.
+  const bannerY = H * 0.60;
+  const candidates = [...clusters.entries()]
+    .filter(([y, ws]) => y > bannerY && ws.length >= 2)
+    .sort((a, b) => {
+      const spanA = Math.max(...a[1].map((w) => w.bbox.x1)) - Math.min(...a[1].map((w) => w.bbox.x0));
+      const spanB = Math.max(...b[1].map((w) => w.bbox.x1)) - Math.min(...b[1].map((w) => w.bbox.x0));
+      return spanB - spanA;
+    });
 
-      // Mean color per group → nearest unused faction.
-      const used = new Set<string>();
-      const factions = valid.map(g => {
-        const mean: [number,number,number] = [g.sum[0]/g.count, g.sum[1]/g.count, g.sum[2]/g.count];
-        let best = "", bestD = Infinity;
-        for (const [id, ref] of Object.entries(FACTION_REF_COLORS)) {
-          if (used.has(id)) continue;
-          const d = rgbDist(mean, ref);
-          if (d < bestD) { bestD = d; best = id; }
-        }
-        used.add(best);
-        return best;
-      });
+  if (!candidates.length) return { names: [], factions: [] };
 
-      resolve(factions);
-    };
-    img.src = url;
+  const nameWords = candidates[0][1].sort((a, b) => a.bbox.x0 - b.bbox.x0);
+  const names = nameWords.map((w) => w.text.trim());
+
+  // Sample banner color in a strip just below each word (avoids white text pixels).
+  const used = new Set<string>();
+  const factions = nameWords.map((word) => {
+    const patchX = Math.max(0, word.bbox.x0);
+    const patchW = Math.max(1, word.bbox.x1 - word.bbox.x0);
+    const patchY = Math.min(H - 6, word.bbox.y1 + 5);
+    const patch = ctx.getImageData(patchX, patchY, patchW, 6);
+    let r = 0, g = 0, b = 0;
+    const n = patch.data.length / 4;
+    for (let i = 0; i < patch.data.length; i += 4) { r += patch.data[i]; g += patch.data[i+1]; b += patch.data[i+2]; }
+    const color: [number, number, number] = [r/n, g/n, b/n];
+
+    let best = "", bestD = Infinity;
+    for (const [id, ref] of Object.entries(FACTION_REF_COLORS)) {
+      if (used.has(id)) continue;
+      const d = rgbDist(color, ref);
+      if (d < bestD) { bestD = d; best = id; }
+    }
+    used.add(best);
+    return best;
   });
+
+  return { names, factions };
 }
 
 type Player = { id: string; name: string; claimedBy?: { id: string; name: string; image: string } | null };
@@ -425,6 +409,7 @@ export default function GroupLeaderboard({
   const [hasHirelings, setHasHirelings] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [scanError, setScanError] = useState("");
+  const [scanning, setScanning] = useState(false);
 
   const isCoalition = victoryType === "Coalition";
 
@@ -508,15 +493,28 @@ export default function GroupLeaderboard({
 
   async function scanImage(file: File) {
     setScanError("");
-    const factions = await detectFactions(file);
-    if (!factions.length) {
-      setScanError("No player banners detected. Make sure you're uploading a Root end-game screenshot.");
-      return;
+    setScanning(true);
+    try {
+      const { names, factions } = await analyzeScreenshot(file);
+      if (!names.length) {
+        setScanError("No player names detected. Make sure you're uploading a Root end-game screenshot.");
+        return;
+      }
+      const count = Math.max(2, Math.min(MAX_PLAYERS, names.length));
+      setGameRows(
+        Array.from({ length: count }, (_, i) => ({
+          // Exact case-insensitive match against roster; fall back to OCR text (for free-text mode)
+          playerId: rosterNames.find((n) => n.toLowerCase() === names[i]?.toLowerCase()) ?? names[i] ?? "",
+          faction: factions[i] ?? "",
+        }))
+      );
+      setWinnerId(0);
+      setWinnerIds([]);
+    } catch {
+      setScanError("Failed to analyze screenshot. Please try again.");
+    } finally {
+      setScanning(false);
     }
-    const count = Math.max(2, Math.min(MAX_PLAYERS, factions.length));
-    setGameRows(factions.slice(0, count).map(faction => ({ playerId: "", faction })));
-    setWinnerId(0);
-    setWinnerIds([]);
   }
 
   function addGameRow() { setGameRows([...gameRows, emptyGameRow()]); }
@@ -936,8 +934,13 @@ export default function GroupLeaderboard({
                   style={{ display: "none" }}
                   onChange={(e) => { if (e.target.files?.[0]) scanImage(e.target.files[0]); e.target.value = ""; }}
                 />
-                <button className="add-player-btn" style={{ marginBottom: 12 }} onClick={() => imageInputRef.current?.click()}>
-                  📷 Scan screenshot to prefill factions
+                <button
+                  className="add-player-btn"
+                  style={{ marginBottom: 12 }}
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={scanning}
+                >
+                  {scanning ? "⏳ Scanning screenshot…" : "📷 Scan screenshot to prefill"}
                 </button>
                 {scanError && <div className="notice" style={{ marginBottom: 10 }}>{scanError}</div>}
                 <div className="field-label" style={{ marginBottom: 8 }}>Players in this game</div>
