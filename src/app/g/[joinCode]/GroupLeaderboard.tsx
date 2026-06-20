@@ -8,6 +8,7 @@ import { analyzeScreenshot, levenshtein } from "@/lib/screenshot-scan";
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
 const MAX_PLAYERS = 6;
+const PROVISIONAL_THRESHOLD = 3;
 const emptyGameRow = () => ({ playerId: "", faction: "" });
 
 
@@ -61,6 +62,7 @@ const styles = `
   .stat { text-align: center; font-size: 0.88rem; }
   .stat-wins { color: #c9922a; font-weight: 700; font-size: 1rem; }
   .stat-elo { font-family: 'Cinzel', serif; color: #c9922a; font-weight: 700; font-size: 1rem; text-align: center; }
+  .stat-elo.provisional { color: #7a6a40; }
   .stat-elo-label { font-size: 0.6rem; color: #5a6a4a; letter-spacing: 0.08em; text-align: center; }
   .stat-games { color: #7a8a6a; }
   .stat-pct { color: #a0b090; font-size: 0.8rem; }
@@ -820,8 +822,10 @@ export default function GroupLeaderboard({
                     )}
                   </div>
                   <div className="stat">
-                    <div className="stat-elo">{p.groupElo}</div>
-                    <div className="stat-elo-label">pts</div>
+                    <div className={`stat-elo${p.games < PROVISIONAL_THRESHOLD ? " provisional" : ""}`}>
+                      {p.games < PROVISIONAL_THRESHOLD ? "~" : ""}{p.groupElo}
+                    </div>
+                    <div className="stat-elo-label">{p.games < PROVISIONAL_THRESHOLD ? "prov." : "pts"}</div>
                   </div>
                   <div className="stat"><span className="stat-wins">{p.wins}</span></div>
                   <div className="stat">
