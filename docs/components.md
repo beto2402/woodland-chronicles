@@ -51,12 +51,39 @@ The core UI. Fetches roster and games from API on load.
   - Coalition validation: enforces Vagabond in game + Vagabond is winner
 
 **Leaderboard panel:**
-- Aggregates wins/games per player
-- Sorted by win rate (wins ÷ games played)
+- Aggregates wins, games, faction set, and per-faction detail (games + wins per faction) from all game records
+- Sorted by `groupElo` descending (highest ELO first)
+- Displays: rank, player name + faction count with detail button, ELO (gold), wins, games + win%
+
+**Faction Detail Modal** (`factionModal` state — player name or null):
+- Opened by clicking "see details" under a player's name in the leaderboard
+- Closed by clicking backdrop, the ✕ button, or pressing Escape
+- Full-screen fixed backdrop + centered card (`width: min(480px, 100%)`, scrollable up to `calc(100vh - 64px)`)
+- Lists each faction the player has played, sorted by games played descending: icon + full name + "XW / YG" + win rate %
+- All data is pre-computed from in-memory game state; opens instantly with no fetch
+
+**Battle Log (paginated):**
+- Games listed newest-first
+- Paginated: 5 / 10 / 15 per page, configurable via page-size selector (page resets to 0 on change)
+- Shows page X of Y, element range (e.g. "1–5 of 18 battles"), Prev/Next buttons
+- `safePage = Math.min(gamesPage, totalPages - 1)` guards against out-of-range when page size changes
+
+**Page layout order (top to bottom):**
+1. Stats cards (Games Played, Denizens, Top Faction) — only shown when games exist
+2. Join banner — only when signed in but not a member
+3. Roster management — only when `isMember`; collapsed behind "manage" toggle by default
+4. "Log a Battle" toggle button — only when `isMember`
+5. Log Battle form (when open)
+6. Standings (ELO leaderboard)
+7. Battle Log + pagination
 
 **Key derived state:**
 - `isMember`: `!!me && roster.some(r => r.player.claimedBy?.id === me.id)`
-- `myPlayer`: the roster entry whose `claimedBy.id` matches the current user
+- `rosterElo`: map from lowercased player name → `GroupPlayer.groupElo`
+- `playerStats`: per-player `{ wins, games, factions: Set<string>, factionDetail: Record<factionId, {games, wins}> }`
+- `leaderboard`: `playerStats` values with ELO attached, sorted by `groupElo` desc
+
+**CSS approach:** All styles live in a single `styles` string constant rendered via `<style>{styles}</style>`. No CSS modules. `html { font-size: 114% }` bumps the entire type scale up ~14%.
 
 ---
 
@@ -70,6 +97,23 @@ Root layout. Wraps children in `<Providers>`. Loads global CSS.
 
 ---
 
+## Components
+
+### `src/components/FactionIcon.tsx`
+Exports:
+- `FACTIONS` — array of 14 faction objects `{ id, name, color, textColor, symbol }`
+- `FACTION_MAP` — `Record<id, faction>` for O(1) lookup
+- `getFactionStyle(id)` — inline style `{ background, color, borderColor }` for faction-colored chips
+- `FactionIcon({ id, size })` — renders `<img src="/art/icons/<id>.webp" />` at given size (default 20px)
+
+### `src/components/FactionSelect.tsx`
+Combobox faction picker. Props: `{ value: string, onChange: (id: string) => void }`.
+- Focus opens dropdown with all 14 factions; typing filters by name or id
+- Arrow keys + Enter to navigate/select; Escape or click-outside to close
+- Renders faction icon + name in both the input display and each dropdown option
+
+---
+
 ## Lib
 
 | File | Purpose |
@@ -77,6 +121,8 @@ Root layout. Wraps children in `<Providers>`. Loads global CSS.
 | `src/lib/auth.ts` | NextAuth config: Google provider, PrismaAdapter, session callback that adds `user.id` |
 | `src/lib/prisma.ts` | Singleton PrismaClient (prevents multiple instances during hot reload) |
 | `src/lib/nanoid.ts` | 8-char alphanumeric join code generator using `crypto.getRandomValues` |
+| `src/lib/elo.ts` | Pure ELO math + DB recalculation. Exports: `computeEloDeltas`, `replayGames`, `recalculateGroupElo`, `recalculateGlobalElo`. No React dependency. |
+| `src/lib/screenshot-scan.ts` | OCR pipeline for Root end-game screenshots. Exports `analyzeScreenshot(file)` → `{ names, factions }` and `levenshtein(a, b)`. Uses Tesseract.js v7 (lazy-loaded). No React dependency. |
 
 ## Types
 

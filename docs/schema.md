@@ -24,6 +24,7 @@ Represents a Root player identity. **Global** — shared across groups, not per-
 |---|---|---|
 | id | String (cuid) | PK |
 | name | String | globally unique, case-insensitive — enforced by `CREATE UNIQUE INDEX "Player_name_key" ON "Player" (lower(name))` (NOT a Prisma `@unique`) |
+| globalElo | Float | default 1000; recalculated from all games across all groups whenever any game is created or deleted anywhere |
 | claimedById | String? | unique FK → User; enforces one-to-one claim at DB level |
 | groups | GroupPlayer[] | memberships |
 | gamePlayers | GamePlayer[] | game participations |
@@ -45,6 +46,7 @@ Join table: Player ↔ Group. Composite PK `(groupId, playerId)`.
 | Field | Type | Notes |
 |---|---|---|
 | role | Role enum | ADMIN \| MEMBER |
+| groupElo | Float | default 1000; recalculated from that group's games whenever any game in the group is created or deleted |
 | joinedAt | DateTime | |
 
 ### Game

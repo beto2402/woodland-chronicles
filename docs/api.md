@@ -125,8 +125,27 @@ Logs a new game.
 - COALITION requires a Vagabond faction in the game and Vagabond must be a winner
 - Valid factions (the official Root factions, incl. the latest expansion's Knaves of the Deepwood, Lilypad Diaspora, and Twilight Council): `marquise`, `eyrie`, `alliance`, `vagabond`, `vagabond2`, `riverfolk`, `lizard`, `duchy`, `corvid`, `lord`, `keepers`, `knaves`, `lilypad`, `twilight`
 
+**Side effect:** After saving, calls `recalculateGroupElo(groupId)` and `recalculateGlobalElo()` — replays all games to update every player's ELO.
+
 ### `DELETE /api/groups/[joinCode]/games/[id]`
 Deletes a game.
 
 **Auth:** required  
 **Rules:** Must be the user who logged the game OR a group ADMIN
+
+**Side effect:** After deletion, calls `recalculateGroupElo(groupId)` and `recalculateGlobalElo()` to replay all remaining games and update every affected player's ELO.
+
+---
+
+## ELO Ratings
+
+ELO is maintained automatically on `POST /games` and `DELETE /games/:id`. Both routes call:
+- `recalculateGroupElo(groupId)` — replays all games in the group chronologically, updates `GroupPlayer.groupElo`
+- `recalculateGlobalElo()` — replays all games across all groups, updates `Player.globalElo`
+
+**Algorithm (`src/lib/elo.ts`):**
+- Pairwise comparisons: every winner beats every loser (score 1–0); coalition co-winners draw (0.5–0.5); loser-vs-loser pairs are skipped
+- K-factor: `K=32` divided by `(N-1)` to prevent inflation in larger games
+- Starting ELO: 1000
+- Recalculates from scratch on every change (correct even after deletions)
+- `scripts/backfill-elo.mjs` — one-time backfill script for pre-existing game history

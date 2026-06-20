@@ -174,6 +174,21 @@ const styles = `
   .join-banner-row input { flex: 1; background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.88rem; padding: 8px 10px; outline: none; transition: border-color 0.15s; }
   .join-banner-row input:focus { border-color: #c9922a; }
 
+  .faction-detail-btn { background: none; border: none; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.65rem; padding: 1px 4px; border-radius: 2px; letter-spacing: 0.04em; transition: all 0.15s; }
+  .faction-detail-btn:hover { color: #c9922a; background: rgba(201,146,42,0.08); }
+  .faction-count { font-size: 0.68rem; color: #5a6a4a; display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+
+  .faction-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .faction-modal { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 6px; width: min(480px, 100%); max-height: calc(100vh - 64px); overflow-y: auto; padding: 24px 24px 20px; position: relative; }
+  .faction-modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: #5a6a4a; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 4px 8px; border-radius: 3px; transition: color 0.15s; }
+  .faction-modal-close:hover { color: #f2e8d0; }
+  .faction-modal-title { font-family: 'Cinzel', serif; font-size: 1.1rem; color: #c9922a; margin-bottom: 2px; padding-right: 36px; }
+  .faction-modal-sub { font-size: 0.62rem; color: #5a6a4a; letter-spacing: 0.2em; text-transform: uppercase; font-family: 'Cinzel', serif; margin-bottom: 18px; }
+  .faction-detail-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; margin-bottom: 6px; }
+  .faction-detail-name { flex: 1; font-size: 0.88rem; color: #f2e8d0; }
+  .faction-detail-stats { text-align: right; font-size: 0.8rem; color: #7a8a6a; line-height: 1.5; min-width: 88px; }
+  .faction-detail-pct { font-size: 0.72rem; color: #a0b090; }
+
   @media (max-width: 500px) {
     .form-grid { grid-template-columns: 1fr; }
     .game-players { max-width: 170px; }
@@ -214,10 +229,17 @@ export default function GroupLeaderboard({
   const [scanning, setScanning] = useState(false);
   const [gamesPage, setGamesPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
+  const [factionModal, setFactionModal] = useState<string | null>(null);
 
   const isCoalition = victoryType === "Coalition";
 
   useEffect(() => { loadAll(); }, []);
+  useEffect(() => {
+    if (!factionModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFactionModal(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [factionModal]);
   useEffect(() => {
     if (session) {
       fetch("/api/me").then((r) => r.ok ? r.json() : null).then(setMe);
@@ -408,15 +430,20 @@ export default function GroupLeaderboard({
     rosterElo[entry.player.name.toLowerCase()] = entry.groupElo;
   }
 
-  const playerStats: Record<string, { name: string; wins: number; games: number; factions: Set<string> }> = {};
+  const playerStats: Record<string, { name: string; wins: number; games: number; factions: Set<string>; factionDetail: Record<string, { games: number; wins: number }> }> = {};
   for (const game of games) {
     for (const p of game.players) {
       const key = p.player.name.toLowerCase();
       if (!playerStats[key]) {
-        playerStats[key] = { name: p.player.name, wins: 0, games: 0, factions: new Set() };
+        playerStats[key] = { name: p.player.name, wins: 0, games: 0, factions: new Set(), factionDetail: {} };
       }
       playerStats[key].games++;
-      if (p.faction) playerStats[key].factions.add(p.faction);
+      if (p.faction) {
+        playerStats[key].factions.add(p.faction);
+        if (!playerStats[key].factionDetail[p.faction]) playerStats[key].factionDetail[p.faction] = { games: 0, wins: 0 };
+        playerStats[key].factionDetail[p.faction].games++;
+        if (p.isWinner) playerStats[key].factionDetail[p.faction].wins++;
+      }
       if (p.isWinner) playerStats[key].wins++;
     }
   }
@@ -783,16 +810,14 @@ export default function GroupLeaderboard({
                   <span className={`rank rank-${i + 1}`}>{i + 1}</span>
                   <div className="player-info">
                     <span className="player-name">{p.name}</span>
-                    <div className="faction-tags">
-                      {[...p.factions].map((fid) => {
-                        const f = FACTION_MAP[fid];
-                        return f ? (
-                          <span key={fid} className="faction-tag" style={getFactionStyle(fid)}>
-                            <FactionIcon id={fid} size={22} /> {f.name.split(" ")[0]}
-                          </span>
-                        ) : null;
-                      })}
-                    </div>
+                    {p.factions.size > 0 && (
+                      <div className="faction-count">
+                        <span>{p.factions.size} {p.factions.size === 1 ? "faction" : "factions"}</span>
+                        <button className="faction-detail-btn" onClick={() => setFactionModal(p.name)}>
+                          see details
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="stat">
                     <div className="stat-elo">{p.groupElo}</div>
@@ -913,6 +938,34 @@ export default function GroupLeaderboard({
           )}
         </div>
       </div>
+
+      {factionModal && (() => {
+        const entry = leaderboard.find((x) => x.name === factionModal);
+        if (!entry) return null;
+        const details = Object.entries(entry.factionDetail).sort((a, b) => b[1].games - a[1].games);
+        return (
+          <div className="faction-modal-backdrop" onClick={() => setFactionModal(null)}>
+            <div className="faction-modal" onClick={(e) => e.stopPropagation()}>
+              <button className="faction-modal-close" onClick={() => setFactionModal(null)}>✕</button>
+              <div className="faction-modal-title">{entry.name}</div>
+              <div className="faction-modal-sub">Faction History</div>
+              {details.map(([fid, stat]) => {
+                const f = FACTION_MAP[fid];
+                return (
+                  <div key={fid} className="faction-detail-row">
+                    <FactionIcon id={fid} size={36} />
+                    <span className="faction-detail-name">{f?.name ?? fid}</span>
+                    <div className="faction-detail-stats">
+                      <div>{stat.wins}W / {stat.games}G</div>
+                      <div className="faction-detail-pct">{Math.round((stat.wins / stat.games) * 100)}% win rate</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
