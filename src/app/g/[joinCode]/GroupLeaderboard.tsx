@@ -152,11 +152,17 @@ const styles = `
   .roster-toggle:hover { background: #152515; color: #8b3a1a; }
   .no-roster { font-size: 0.82rem; color: #5a6a4a; font-style: italic; padding: 8px 0; }
 
-  .pagination { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-  .pagination-info { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.1em; color: #5a6a4a; flex: 1; min-width: 140px; line-height: 1.5; }
-  .pagination-btn { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.78rem; padding: 5px 12px; transition: all 0.15s; white-space: nowrap; }
+  .pagination { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+  .pagination-pages { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .pagination-meta { display: flex; align-items: center; gap: 10px; }
+  .pagination-info { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.1em; color: #5a6a4a; flex: 1; line-height: 1.5; }
+  .pagination-btn { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.78rem; padding: 5px 10px; transition: all 0.15s; white-space: nowrap; }
   .pagination-btn:hover:not(:disabled) { border-color: #5a6a4a; color: #f2e8d0; }
   .pagination-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .page-btn { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.72rem; min-width: 30px; height: 30px; padding: 0 6px; transition: all 0.15s; }
+  .page-btn:hover { border-color: #5a6a4a; color: #f2e8d0; }
+  .page-btn.active { background: rgba(201,146,42,0.12); border-color: #c9922a55; color: #c9922a; cursor: default; }
+  .page-ellipsis { color: #5a6a4a; font-size: 0.8rem; padding: 0 2px; line-height: 30px; user-select: none; }
   .page-size-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #7a8a6a; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 5px 8px; cursor: pointer; outline: none; -webkit-appearance: none; }
   .page-size-select:focus { border-color: #c9922a; }
   .claimed-badge { font-size: 0.6rem; padding: 1px 6px; background: rgba(201,146,42,0.1); border: 1px solid #c9922a44; border-radius: 2px; color: #c9922a; letter-spacing: 0.08em; }
@@ -906,36 +912,37 @@ export default function GroupLeaderboard({
                   );
                 })}
               </div>
-              <div className="pagination">
-                <button
-                  className="pagination-btn"
-                  disabled={safePage === 0}
-                  onClick={() => setGamesPage((p) => p - 1)}
-                >
-                  ← Prev
-                </button>
-                <div className="pagination-info">
-                  Page {safePage + 1} of {totalPages}
-                  <br />
-                  {pageFirst}–{pageLast} of {sortedGames.length} battles
-                </div>
-                <button
-                  className="pagination-btn"
-                  disabled={safePage >= totalPages - 1}
-                  onClick={() => setGamesPage((p) => p + 1)}
-                >
-                  Next →
-                </button>
-                <select
-                  className="page-size-select"
-                  value={pageSize}
-                  onChange={(e) => { setPageSize(Number(e.target.value)); setGamesPage(0); }}
-                >
-                  <option value={5}>5 / page</option>
-                  <option value={10}>10 / page</option>
-                  <option value={15}>15 / page</option>
-                </select>
-              </div>
+              {(() => {
+                const lastPage = totalPages - 1;
+                const windowEnd = Math.min(safePage + 3, lastPage);
+                const windowPages = Array.from({ length: windowEnd - safePage + 1 }, (_, i) => safePage + i);
+                const gapToLast = lastPage - windowEnd;
+                return (
+                  <div className="pagination">
+                    <div className="pagination-pages">
+                      <button className="pagination-btn" disabled={safePage === 0} onClick={() => setGamesPage((p) => p - 1)}>←</button>
+                      {windowPages.map((pg) => (
+                        <button key={pg} className={`page-btn${pg === safePage ? " active" : ""}`} onClick={() => setGamesPage(pg)}>
+                          {pg + 1}
+                        </button>
+                      ))}
+                      {gapToLast >= 2 && <span className="page-ellipsis">…</span>}
+                      {gapToLast >= 1 && (
+                        <button className="page-btn" onClick={() => setGamesPage(lastPage)}>{totalPages}</button>
+                      )}
+                      <button className="pagination-btn" disabled={safePage >= lastPage} onClick={() => setGamesPage((p) => p + 1)}>→</button>
+                    </div>
+                    <div className="pagination-meta">
+                      <span className="pagination-info">{pageFirst}–{pageLast} of {sortedGames.length} battles</span>
+                      <select className="page-size-select" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setGamesPage(0); }}>
+                        <option value={5}>5 / page</option>
+                        <option value={10}>10 / page</option>
+                        <option value={15}>15 / page</option>
+                      </select>
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           )}
           </>
