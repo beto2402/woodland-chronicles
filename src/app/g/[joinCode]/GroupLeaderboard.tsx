@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { FACTION_MAP, FactionIcon, getFactionStyle } from "@/components/FactionIcon";
 import { FactionSelect } from "@/components/FactionSelect";
+import { PlayerSelect } from "@/components/PlayerSelect";
 import { analyzeScreenshot, levenshtein } from "@/lib/screenshot-scan";
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
@@ -700,12 +701,11 @@ export default function GroupLeaderboard({
                     <div key={i} className="player-row">
                       <div className="field">
                         {rosterNames.length > 0 ? (
-                          <select value={row.playerId} onChange={(e) => updateGameRow(i, "playerId", e.target.value)}>
-                            <option value="">— Player —</option>
-                            {availableForRow(i).map((name) => (
-                              <option key={name} value={name}>{name}</option>
-                            ))}
-                          </select>
+                          <PlayerSelect
+                            value={row.playerId}
+                            options={availableForRow(i)}
+                            onChange={(name) => updateGameRow(i, "playerId", name)}
+                          />
                         ) : (
                           <input
                             placeholder={`Player ${i + 1} name`}
