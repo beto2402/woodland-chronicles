@@ -2,161 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-
-const FACTIONS = [
-  { id: "marquise", name: "Marquise de Cat", symbol: "🐱", color: "#e8a020" },
-  { id: "eyrie", name: "Eyrie Dynasties", symbol: "🦅", color: "#4a90d9" },
-  { id: "alliance", name: "Woodland Alliance", symbol: "🌿", color: "#5a8a3a" },
-  { id: "vagabond", name: "Vagabond", symbol: "🎒", color: "#888888" },
-  { id: "vagabond2", name: "Vagabond (2nd)", symbol: "🎒", color: "#aaaaaa" },
-  { id: "riverfolk", name: "Riverfolk Company", symbol: "🦦", color: "#3a9aaa" },
-  { id: "lizard", name: "Lizard Cult", symbol: "🦎", color: "#c8a830" },
-  { id: "duchy", name: "Underground Duchy", symbol: "🪨", color: "#9b7040" },
-  { id: "corvid", name: "Corvid Conspiracy", symbol: "🐦‍⬛", color: "#5a3a7a" },
-  { id: "lord", name: "Lord of the Hundreds", symbol: "🐀", color: "#b03030" },
-  { id: "keepers", name: "Keepers in Iron", symbol: "⚔️", color: "#708090" },
-  { id: "knaves", name: "Knaves of the Deepwood", symbol: "🦨", color: "#4a6040" },
-  { id: "lilypad", name: "Lilypad Diaspora", symbol: "🐸", color: "#3fa98c" },
-  { id: "twilight", name: "Twilight Council", symbol: "🦇", color: "#6a5acd" },
-];
+import { FACTION_MAP, FactionIcon, getFactionStyle } from "@/components/FactionIcon";
+import { FactionSelect } from "@/components/FactionSelect";
+import { analyzeScreenshot, levenshtein } from "@/lib/screenshot-scan";
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
-const FACTION_MAP = Object.fromEntries(FACTIONS.map((f) => [f.id, f]));
 const MAX_PLAYERS = 6;
 const emptyGameRow = () => ({ playerId: "", faction: "" });
 
-// Reference banner colors from the Root digital app (Dire Wolf Digital).
-// Calibrated from 52 winning screenshots. Knaves/Lilypad/Twilight are physical-only
-// expansions not available in the digital game and are excluded.
-// Reference banner colors calibrated from 52 winning screenshots using
-// gradient-aware median sampling (skips white text + black shadow pixels).
-// Knaves/Lilypad/Twilight are physical-only, not in the digital game.
-const FACTION_REF_COLORS: Record<string, [number, number, number]> = {
-  marquise:  [190, 114,  52],  // orange-amber — 1 winner sample
-  eyrie:     [ 57,  85, 121],  // blue — avg of 2 consistent samples
-  alliance:  [ 18, 138,  65],  // green — avg of 6 consistent samples
-  vagabond:  [ 90,  92,  90],  // gray — 4 identical samples
-  riverfolk: [ 65, 137, 132],  // teal — avg of 2 consistent samples (#27, #49)
-  lizard:    [135, 135,  46],  // olive — avg of 2 consistent samples
-  duchy:     [198, 136,  75],  // amber — avg of 2 winner samples (#23, #38)
-  corvid:    [130, 105, 152],  // purple — avg of 2 consistent samples
-  lord:      [160,   5,  22],  // crimson — avg of 2 consistent samples
-  keepers:   [ 70, 109, 138],  // steel blue — 1 winner sample
-};
-
-function rgbDist(a: [number, number, number], b: [number, number, number]) {
-  return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2);
-}
-
-function levenshtein(a: string, b: string): number {
-  const row = Array.from({ length: b.length + 1 }, (_, j) => j);
-  for (let i = 1; i <= a.length; i++) {
-    let prev = i;
-    for (let j = 1; j <= b.length; j++) {
-      const next = a[i-1] === b[j-1] ? row[j-1] : 1 + Math.min(prev, row[j], row[j-1]);
-      row[j-1] = prev;
-      prev = next;
-    }
-    row[b.length] = prev;
-  }
-  return row[b.length];
-}
-
-// OCR-based screenshot analysis: finds all text bounding boxes, clusters by Y position
-// to identify the names row (all player names are on the same horizontal band), then
-// samples the banner color below each name for faction matching.
-async function analyzeScreenshot(file: File): Promise<{ names: string[]; factions: string[] }> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1200 / bitmap.width);
-  const W = Math.floor(bitmap.width * scale);
-  const H = Math.floor(bitmap.height * scale);
-  const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(bitmap, 0, 0, W, H);
-
-  // Lazy-load Tesseract — downloads worker + eng model on first use (~15 MB, then cached).
-  const { createWorker, PSM } = await import("tesseract.js");
-  const worker = await createWorker("eng");
-  // PSM.SPARSE_TEXT: finds text anywhere without assuming a document layout.
-  // Essential for game screenshots where names are scattered across colored banners.
-  await worker.setParameters({ tessedit_pageseg_mode: PSM.SPARSE_TEXT });
-  // blocks:true is required — without it data.blocks is always null regardless of PSM.
-  const { data } = await worker.recognize(canvas, {}, { blocks: true });
-  await worker.terminate();
-
-  // Flatten block → paragraph → line → word tree into a single word list.
-  type TWord = { text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } };
-  const allWords: TWord[] = (data.blocks ?? []).flatMap((bl) =>
-    bl.paragraphs.flatMap((par) =>
-      par.lines.flatMap((ln) => ln.words as TWord[])
-    )
-  );
-  // Keep words with ≥3 alphabetic characters — drops pure numbers/symbols and 2-letter
-  // OCR artifacts ("NA", "NZ") from score-circle laurel decoration.
-  const valid = allWords.filter(
-    (w) => w.confidence > 30 && (w.text.match(/[a-zA-Z]/g) ?? []).length >= 3
-  );
-
-  // Cluster words by Y centroid within ±30px tolerance.
-  const clusters = new Map<number, TWord[]>();
-  for (const word of valid) {
-    const cy = Math.round((word.bbox.y0 + word.bbox.y1) / 2);
-    const existing = [...clusters.keys()].find((k) => Math.abs(k - cy) <= 30);
-    const key = existing ?? cy;
-    if (!clusters.has(key)) clusters.set(key, []);
-    clusters.get(key)!.push(word);
-  }
-
-  // Best candidate: in bottom 50% of image, has ≥2 words, spans the widest horizontal range.
-  const bannerY = H * 0.50;
-  const candidates = [...clusters.entries()]
-    .filter(([y, ws]) => y > bannerY && ws.length >= 2)
-    .sort((a, b) => {
-      const spanA = Math.max(...a[1].map((w) => w.bbox.x1)) - Math.min(...a[1].map((w) => w.bbox.x0));
-      const spanB = Math.max(...b[1].map((w) => w.bbox.x1)) - Math.min(...b[1].map((w) => w.bbox.x0));
-      return spanB - spanA;
-    });
-
-  if (!candidates.length) return { names: [], factions: [] };
-
-  const nameWords = candidates[0][1].sort((a, b) => a.bbox.x0 - b.bbox.x0);
-  const names = nameWords.map((w) => w.text.trim());
-
-  // Sample the median banner color over the full bounding box height of each name word.
-  // Skips near-white pixels (text) and near-black pixels (shadow/border) so the
-  // banner's gradient doesn't skew the result — only the solid faction color band counts.
-  const used = new Set<string>();
-  const factions = nameWords.map((word) => {
-    const x0 = Math.max(0, word.bbox.x0), x1 = Math.min(W, word.bbox.x1);
-    const y0 = Math.max(0, word.bbox.y0), y1 = Math.min(H, word.bbox.y1 + 10);
-    const patch = ctx.getImageData(x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0));
-    const samples: [number, number, number][] = [];
-    for (let i = 0; i < patch.data.length; i += 4) {
-      const r = patch.data[i], g = patch.data[i+1], b = patch.data[i+2];
-      const brightness = (r + g + b) / 3;
-      if (brightness > 200 || brightness < 40) continue;
-      samples.push([r, g, b]);
-    }
-    samples.sort((a, b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
-    const mid = samples[Math.floor(samples.length / 2)] ?? [128, 128, 128];
-    const color: [number, number, number] = mid;
-
-    let best = "", bestD = Infinity;
-    for (const [id, ref] of Object.entries(FACTION_REF_COLORS)) {
-      if (used.has(id)) continue;
-      const d = rgbDist(color, ref);
-      if (d < bestD) { bestD = d; best = id; }
-    }
-    // Reject if no reference is close enough — better to leave blank than guess wrong.
-    // Max legitimate distance in validation was 52; 80 gives a comfortable margin.
-    if (bestD > 80) best = "";
-    if (best) used.add(best);
-    return best;
-  });
-
-  return { names, factions };
-}
 
 type Player = { id: string; name: string; claimedBy?: { id: string; name: string; image: string } | null };
 type RosterEntry = { playerId: string; role: string; player: Player };
@@ -294,6 +147,14 @@ const styles = `
   .roster-toggle { background: none; border: none; color: #5a6a4a; cursor: pointer; font-size: 0.75rem; padding: 2px 6px; border-radius: 3px; transition: all 0.15s; font-family: 'Lato', sans-serif; }
   .roster-toggle:hover { background: #152515; color: #8b3a1a; }
   .no-roster { font-size: 0.82rem; color: #5a6a4a; font-style: italic; padding: 8px 0; }
+
+  .pagination { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .pagination-info { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.1em; color: #5a6a4a; flex: 1; min-width: 140px; line-height: 1.5; }
+  .pagination-btn { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.78rem; padding: 5px 12px; transition: all 0.15s; white-space: nowrap; }
+  .pagination-btn:hover:not(:disabled) { border-color: #5a6a4a; color: #f2e8d0; }
+  .pagination-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .page-size-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #7a8a6a; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 5px 8px; cursor: pointer; outline: none; -webkit-appearance: none; }
+  .page-size-select:focus { border-color: #c9922a; }
   .claimed-badge { font-size: 0.6rem; padding: 1px 6px; background: rgba(201,146,42,0.1); border: 1px solid #c9922a44; border-radius: 2px; color: #c9922a; letter-spacing: 0.08em; }
   .btn-claim { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 2px 8px; transition: all 0.15s; white-space: nowrap; }
   .btn-claim:hover { border-color: #c9922a; color: #c9922a; }
@@ -319,99 +180,6 @@ const styles = `
   }
 `;
 
-function getFactionStyle(factionId: string) {
-  const f = FACTION_MAP[factionId];
-  if (!f) return {};
-  // Use faction color only for the border accent; keep text readable on dark backgrounds.
-  return { color: "#d8e0c8", borderColor: f.color + "88" };
-}
-
-// Small faction character art, used in place of the old emoji symbols.
-function FactionIcon({ id, size = 20 }: { id: string; size?: number }) {
-  const f = FACTION_MAP[id];
-  if (!f) return null;
-  return (
-    <img
-      src={`/art/icons/${id}.webp`}
-      alt={f.name}
-      width={size}
-      height={size}
-      loading="lazy"
-      style={{ width: size, height: size, objectFit: "contain", verticalAlign: "middle", display: "inline-block", flexShrink: 0 }}
-    />
-  );
-}
-
-// Type-to-filter faction picker. Falls back to showing the full list on focus.
-function FactionSelect({ value, onChange }: { value: string; onChange: (id: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-
-  const selected = FACTION_MAP[value];
-  const q = query.trim().toLowerCase();
-  const filtered = q
-    ? FACTIONS.filter((f) => f.name.toLowerCase().includes(q) || f.id.includes(q))
-    : FACTIONS;
-
-  useEffect(() => {
-    function onDocMouseDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-        setQuery("");
-      }
-    }
-    document.addEventListener("mousedown", onDocMouseDown);
-    return () => document.removeEventListener("mousedown", onDocMouseDown);
-  }, []);
-
-  function pick(id: string) {
-    onChange(id);
-    setOpen(false);
-    setQuery("");
-  }
-
-  return (
-    <div className="combobox" ref={ref}>
-      {!open && selected && (
-        <span className="combobox-icon"><FactionIcon id={selected.id} size={30} /></span>
-      )}
-      <input
-        className="combobox-input"
-        placeholder="— Faction —"
-        style={!open && selected ? { paddingLeft: 46 } : undefined}
-        value={open ? query : selected ? selected.name : ""}
-        onChange={(e) => { setQuery(e.target.value); setActive(0); if (!open) setOpen(true); }}
-        onFocus={() => { setOpen(true); setQuery(""); setActive(0); }}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowDown") { e.preventDefault(); setOpen(true); setActive((a) => Math.min(a + 1, filtered.length - 1)); }
-          else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
-          else if (e.key === "Enter") { e.preventDefault(); if (filtered[active]) { pick(filtered[active].id); e.currentTarget.blur(); } }
-          else if (e.key === "Escape") { setOpen(false); setQuery(""); }
-        }}
-      />
-      {open && (
-        <div className="combobox-list">
-          {filtered.length === 0 ? (
-            <div className="combobox-empty">No factions match</div>
-          ) : (
-            filtered.map((f, i) => (
-              <div
-                key={f.id}
-                className={`combobox-option ${i === active ? "active" : ""} ${f.id === value ? "selected" : ""}`}
-                onMouseEnter={() => setActive(i)}
-                onMouseDown={(e) => { e.preventDefault(); pick(f.id); }}
-              >
-                <FactionIcon id={f.id} size={34} /> {f.name}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function GroupLeaderboard({
   joinCode,
@@ -442,6 +210,8 @@ export default function GroupLeaderboard({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [scanError, setScanError] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [gamesPage, setGamesPage] = useState(0);
+  const [pageSize, setPageSize] = useState(5);
 
   const isCoalition = victoryType === "Coalition";
 
@@ -622,6 +392,14 @@ export default function GroupLeaderboard({
     setGames((prev) => prev.filter((g) => g.id !== id));
   }
 
+  // Games sorted newest-first for the battle log
+  const sortedGames = [...games].sort((a, b) => b.date.localeCompare(a.date));
+  const totalPages = Math.max(1, Math.ceil(sortedGames.length / pageSize));
+  const safePage = Math.min(gamesPage, totalPages - 1);
+  const pagedGames = sortedGames.slice(safePage * pageSize, (safePage + 1) * pageSize);
+  const pageFirst = sortedGames.length === 0 ? 0 : safePage * pageSize + 1;
+  const pageLast = Math.min((safePage + 1) * pageSize, sortedGames.length);
+
   // Leaderboard computation
   const playerStats: Record<string, { name: string; wins: number; games: number; factions: Set<string> }> = {};
   for (const game of games) {
@@ -748,119 +526,6 @@ export default function GroupLeaderboard({
                 </div>
               )}
             </div>
-          )}
-
-          <div className="section-label">Standings</div>
-          <div className="leaderboard">
-            <div className="lb-row lb-header">
-              <span>#</span>
-              <span>Denizen</span>
-              <span style={{ textAlign: "center" }}>Factions</span>
-              <span style={{ textAlign: "center" }}>Wins</span>
-              <span style={{ textAlign: "center" }}>Games</span>
-            </div>
-            {leaderboard.length === 0 ? (
-              <div className="empty-state">No battles recorded yet. Log a game to begin.</div>
-            ) : (
-              leaderboard.map((p, i) => (
-                <div key={p.name} className={`lb-row ${i === 0 ? "top-player" : ""}`}>
-                  <span className={`rank rank-${i + 1}`}>{i + 1}</span>
-                  <div className="player-info">
-                    <span className="player-name">{p.name}</span>
-                    <div className="faction-tags">
-                      {[...p.factions].map((fid) => {
-                        const f = FACTION_MAP[fid];
-                        return f ? (
-                          <span key={fid} className="faction-tag" style={getFactionStyle(fid)}>
-                            <FactionIcon id={fid} size={22} /> {f.name.split(" ")[0]}
-                          </span>
-                        ) : null;
-                      })}
-                    </div>
-                  </div>
-                  <div className="stat" style={{ textAlign: "center" }}>
-                    <span style={{ color: "#5a6a4a", fontSize: "0.8rem" }}>{p.factions.size}</span>
-                  </div>
-                  <div className="stat"><span className="stat-wins">{p.wins}</span></div>
-                  <div className="stat">
-                    <div className="stat-games">{p.games}</div>
-                    <div className="stat-pct">{Math.round((p.wins / p.games) * 100)}%</div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {games.length > 0 && (
-            <>
-              <div className="section-label">Battle Log</div>
-              <div className="game-log">
-                {games.map((g) => {
-                  const winners = g.players.filter((p) => p.isWinner);
-                  const winnerNames = new Set(winners.map((w) => w.player.name));
-                  return (
-                    <div key={g.id} className="game-card">
-                      <div className="game-date">
-                        {g.date.slice(0, 10)}
-                        <div style={{ marginTop: 4 }}>
-                          <span style={{
-                            fontSize: "0.6rem", padding: "1px 5px",
-                            background: !g.isVirtual ? "rgba(90,138,58,0.2)" : "rgba(74,144,217,0.15)",
-                            border: `1px solid ${!g.isVirtual ? "#5a8a3a55" : "#4a90d955"}`,
-                            borderRadius: 2,
-                            color: !g.isVirtual ? "#8ab070" : "#7ab0d0",
-                            letterSpacing: "0.06em",
-                          }}>
-                            {!g.isVirtual ? "🎲 In Person" : "🖥️ Virtual"}
-                          </span>
-                        </div>
-                        {g.hasHirelings && (
-                          <div style={{ marginTop: 4 }}>
-                            <span style={{ fontSize: "0.6rem", padding: "1px 5px", background: "rgba(201,146,42,0.1)", border: "1px solid #c9922a44", borderRadius: 2, color: "#c9922a", letterSpacing: "0.06em" }}>
-                              Hirelings
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="game-winner">
-                        <span className="winner-label">{winners.length > 1 ? "Coalition" : "Victor"}</span>
-                        {winners.map((w) => {
-                          const wf = FACTION_MAP[w.faction];
-                          return (
-                            <div key={w.player.name} className="winner-entry">
-                              <span className="winner-name">{w.player.name}</span>
-                              <span className="winner-faction">
-                                {wf ? <><FactionIcon id={w.faction} size={28} /> {wf.name}</> : w.faction}
-                              </span>
-                            </div>
-                          );
-                        })}
-                        <div className="victory-badge" style={{ marginTop: 4 }}>{g.victoryType}</div>
-                      </div>
-                      <div className="game-players">
-                        {g.players.filter((p) => !winnerNames.has(p.player.name)).map((p) => {
-                          const pf = FACTION_MAP[p.faction];
-                          return (
-                            <span key={p.player.name} className="player-chip">
-                              {pf ? <FactionIcon id={p.faction} size={30} /> : null} {p.player.name}
-                            </span>
-                          );
-                        })}
-                      </div>
-                      {confirmDeleteId === g.id ? (
-                        <div className="confirm-delete">
-                          <span className="confirm-text">Delete?</span>
-                          <button className="confirm-yes" onClick={() => { deleteGame(g.id); setConfirmDeleteId(null); }}>Yes</button>
-                          <button className="confirm-no" onClick={() => setConfirmDeleteId(null)}>No</button>
-                        </div>
-                      ) : (
-                        <button className="delete-btn" onClick={() => setConfirmDeleteId(g.id)} title="Delete">✕</button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
           )}
 
           {isMember && (
@@ -1092,6 +757,149 @@ export default function GroupLeaderboard({
                 <button className="btn-primary" onClick={logGame} disabled={!formValid}>Record Battle</button>
               </div>
             </div>
+          )}
+
+          <div className="section-label">Standings</div>
+          <div className="leaderboard">
+            <div className="lb-row lb-header">
+              <span>#</span>
+              <span>Denizen</span>
+              <span style={{ textAlign: "center" }}>Factions</span>
+              <span style={{ textAlign: "center" }}>Wins</span>
+              <span style={{ textAlign: "center" }}>Games</span>
+            </div>
+            {leaderboard.length === 0 ? (
+              <div className="empty-state">No battles recorded yet. Log a game to begin.</div>
+            ) : (
+              leaderboard.map((p, i) => (
+                <div key={p.name} className={`lb-row ${i === 0 ? "top-player" : ""}`}>
+                  <span className={`rank rank-${i + 1}`}>{i + 1}</span>
+                  <div className="player-info">
+                    <span className="player-name">{p.name}</span>
+                    <div className="faction-tags">
+                      {[...p.factions].map((fid) => {
+                        const f = FACTION_MAP[fid];
+                        return f ? (
+                          <span key={fid} className="faction-tag" style={getFactionStyle(fid)}>
+                            <FactionIcon id={fid} size={22} /> {f.name.split(" ")[0]}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                  <div className="stat" style={{ textAlign: "center" }}>
+                    <span style={{ color: "#5a6a4a", fontSize: "0.8rem" }}>{p.factions.size}</span>
+                  </div>
+                  <div className="stat"><span className="stat-wins">{p.wins}</span></div>
+                  <div className="stat">
+                    <div className="stat-games">{p.games}</div>
+                    <div className="stat-pct">{Math.round((p.wins / p.games) * 100)}%</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {sortedGames.length > 0 && (
+            <>
+              <div className="section-label">Battle Log</div>
+              <div className="game-log">
+                {pagedGames.map((g) => {
+                  const winners = g.players.filter((p) => p.isWinner);
+                  const winnerNames = new Set(winners.map((w) => w.player.name));
+                  return (
+                    <div key={g.id} className="game-card">
+                      <div className="game-date">
+                        {g.date.slice(0, 10)}
+                        <div style={{ marginTop: 4 }}>
+                          <span style={{
+                            fontSize: "0.6rem", padding: "1px 5px",
+                            background: !g.isVirtual ? "rgba(90,138,58,0.2)" : "rgba(74,144,217,0.15)",
+                            border: `1px solid ${!g.isVirtual ? "#5a8a3a55" : "#4a90d955"}`,
+                            borderRadius: 2,
+                            color: !g.isVirtual ? "#8ab070" : "#7ab0d0",
+                            letterSpacing: "0.06em",
+                          }}>
+                            {!g.isVirtual ? "🎲 In Person" : "🖥️ Virtual"}
+                          </span>
+                        </div>
+                        {g.hasHirelings && (
+                          <div style={{ marginTop: 4 }}>
+                            <span style={{ fontSize: "0.6rem", padding: "1px 5px", background: "rgba(201,146,42,0.1)", border: "1px solid #c9922a44", borderRadius: 2, color: "#c9922a", letterSpacing: "0.06em" }}>
+                              Hirelings
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="game-winner">
+                        <span className="winner-label">{winners.length > 1 ? "Coalition" : "Victor"}</span>
+                        {winners.map((w) => {
+                          const wf = FACTION_MAP[w.faction];
+                          return (
+                            <div key={w.player.name} className="winner-entry">
+                              <span className="winner-name">{w.player.name}</span>
+                              <span className="winner-faction">
+                                {wf ? <><FactionIcon id={w.faction} size={28} /> {wf.name}</> : w.faction}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        <div className="victory-badge" style={{ marginTop: 4 }}>{g.victoryType}</div>
+                      </div>
+                      <div className="game-players">
+                        {g.players.filter((p) => !winnerNames.has(p.player.name)).map((p) => {
+                          const pf = FACTION_MAP[p.faction];
+                          return (
+                            <span key={p.player.name} className="player-chip">
+                              {pf ? <FactionIcon id={p.faction} size={30} /> : null} {p.player.name}
+                            </span>
+                          );
+                        })}
+                      </div>
+                      {confirmDeleteId === g.id ? (
+                        <div className="confirm-delete">
+                          <span className="confirm-text">Delete?</span>
+                          <button className="confirm-yes" onClick={() => { deleteGame(g.id); setConfirmDeleteId(null); }}>Yes</button>
+                          <button className="confirm-no" onClick={() => setConfirmDeleteId(null)}>No</button>
+                        </div>
+                      ) : (
+                        <button className="delete-btn" onClick={() => setConfirmDeleteId(g.id)} title="Delete">✕</button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="pagination">
+                <button
+                  className="pagination-btn"
+                  disabled={safePage === 0}
+                  onClick={() => setGamesPage((p) => p - 1)}
+                >
+                  ← Prev
+                </button>
+                <div className="pagination-info">
+                  Page {safePage + 1} of {totalPages}
+                  <br />
+                  {pageFirst}–{pageLast} of {sortedGames.length} battles
+                </div>
+                <button
+                  className="pagination-btn"
+                  disabled={safePage >= totalPages - 1}
+                  onClick={() => setGamesPage((p) => p + 1)}
+                >
+                  Next →
+                </button>
+                <select
+                  className="page-size-select"
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setGamesPage(0); }}
+                >
+                  <option value={5}>5 / page</option>
+                  <option value={10}>10 / page</option>
+                  <option value={15}>15 / page</option>
+                </select>
+              </div>
+            </>
           )}
           </>
           )}
