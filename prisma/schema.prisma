@@ -79,6 +79,7 @@ model User {
 model Player {
   id        String   @id @default(cuid())
   name      String   // globally unique, case-insensitive — enforced by lower(name) index in DB
+  globalElo Float    @default(1000)
   createdAt DateTime @default(now())
 
   claimedById String? @unique // one user per player, one player per user
@@ -103,6 +104,7 @@ model GroupPlayer {
   groupId  String
   playerId String
   role     Role     @default(MEMBER)
+  groupElo Float    @default(1000)
   joinedAt DateTime @default(now())
 
   group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)

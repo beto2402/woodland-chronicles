@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { VictoryType } from "@prisma/client";
+import { recalculateGroupElo, recalculateGlobalElo } from "@/lib/elo";
 
 const VALID_FACTIONS = new Set([
   "marquise", "eyrie", "alliance", "vagabond", "vagabond2", "riverfolk",
@@ -127,6 +128,9 @@ export async function POST(req: Request, { params }: Params) {
     },
     include: { players: { include: { player: true } } },
   });
+
+  await recalculateGroupElo(group.id);
+  await recalculateGlobalElo();
 
   return NextResponse.json(game, { status: 201 });
 }

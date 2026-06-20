@@ -12,7 +12,7 @@ const emptyGameRow = () => ({ playerId: "", faction: "" });
 
 
 type Player = { id: string; name: string; claimedBy?: { id: string; name: string; image: string } | null };
-type RosterEntry = { playerId: string; role: string; player: Player };
+type RosterEntry = { playerId: string; role: string; groupElo: number; player: Player };
 type Me = { id: string; name: string | null; email: string; claimedPlayer: { id: string; name: string } | null };
 type GamePlayer = { id: string; playerId: string; faction: string; isWinner: boolean; player: Player };
 type Game = {
@@ -46,7 +46,7 @@ const styles = `
   .section-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--accent-label); text-transform: uppercase; margin: 32px 0 12px; }
 
   .leaderboard { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; overflow: hidden; }
-  .lb-row { display: grid; grid-template-columns: 36px 1fr 90px 60px 60px; gap: 0; align-items: center; padding: 10px 16px; border-bottom: 1px solid #1e2e1e; transition: background 0.15s; }
+  .lb-row { display: grid; grid-template-columns: 36px 1fr 76px 56px 60px; gap: 0; align-items: center; padding: 10px 16px; border-bottom: 1px solid #1e2e1e; transition: background 0.15s; }
   .lb-row:last-child { border-bottom: none; }
   .lb-header { background: #152515; padding: 8px 16px; }
   .lb-header span { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.2em; color: #5a6a4a; text-transform: uppercase; }
@@ -60,6 +60,8 @@ const styles = `
   .faction-tag { font-size: 0.6rem; padding: 1px 6px 1px 3px; border-radius: 2px; border: 1px solid; opacity: 0.85; font-family: 'Lato', sans-serif; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 3px; }
   .stat { text-align: center; font-size: 0.88rem; }
   .stat-wins { color: #c9922a; font-weight: 700; font-size: 1rem; }
+  .stat-elo { font-family: 'Cinzel', serif; color: #c9922a; font-weight: 700; font-size: 1rem; text-align: center; }
+  .stat-elo-label { font-size: 0.6rem; color: #5a6a4a; letter-spacing: 0.08em; text-align: center; }
   .stat-games { color: #7a8a6a; }
   .stat-pct { color: #a0b090; font-size: 0.8rem; }
   .empty-state { padding: 40px 16px; text-align: center; color: #5a6a4a; font-style: italic; font-size: 0.9rem; }
@@ -175,7 +177,7 @@ const styles = `
   @media (max-width: 500px) {
     .form-grid { grid-template-columns: 1fr; }
     .game-players { max-width: 170px; }
-    .lb-row { grid-template-columns: 28px 1fr 70px 50px 50px; }
+    .lb-row { grid-template-columns: 28px 1fr 60px 44px 50px; }
     .player-row { grid-template-columns: 1fr 1fr 32px; }
   }
 `;
@@ -401,6 +403,11 @@ export default function GroupLeaderboard({
   const pageLast = Math.min((safePage + 1) * pageSize, sortedGames.length);
 
   // Leaderboard computation
+  const rosterElo: Record<string, number> = {};
+  for (const entry of roster) {
+    rosterElo[entry.player.name.toLowerCase()] = entry.groupElo;
+  }
+
   const playerStats: Record<string, { name: string; wins: number; games: number; factions: Set<string> }> = {};
   for (const game of games) {
     for (const p of game.players) {
@@ -413,9 +420,9 @@ export default function GroupLeaderboard({
       if (p.isWinner) playerStats[key].wins++;
     }
   }
-  const leaderboard = Object.values(playerStats).sort((a, b) =>
-    b.wins !== a.wins ? b.wins - a.wins : b.games - a.games
-  );
+  const leaderboard = Object.values(playerStats)
+    .map((p) => ({ ...p, groupElo: rosterElo[p.name.toLowerCase()] ?? 1000 }))
+    .sort((a, b) => b.groupElo - a.groupElo);
 
   const factionWins: Record<string, number> = {};
   for (const game of games) {
@@ -764,7 +771,7 @@ export default function GroupLeaderboard({
             <div className="lb-row lb-header">
               <span>#</span>
               <span>Denizen</span>
-              <span style={{ textAlign: "center" }}>Factions</span>
+              <span style={{ textAlign: "center" }}>ELO</span>
               <span style={{ textAlign: "center" }}>Wins</span>
               <span style={{ textAlign: "center" }}>Games</span>
             </div>
@@ -787,8 +794,9 @@ export default function GroupLeaderboard({
                       })}
                     </div>
                   </div>
-                  <div className="stat" style={{ textAlign: "center" }}>
-                    <span style={{ color: "#5a6a4a", fontSize: "0.8rem" }}>{p.factions.size}</span>
+                  <div className="stat">
+                    <div className="stat-elo">{p.groupElo}</div>
+                    <div className="stat-elo-label">pts</div>
                   </div>
                   <div className="stat"><span className="stat-wins">{p.wins}</span></div>
                   <div className="stat">

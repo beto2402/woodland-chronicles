@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { recalculateGroupElo, recalculateGlobalElo } from "@/lib/elo";
 
 type Params = { params: Promise<{ joinCode: string; id: string }> };
 
@@ -42,5 +43,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   await prisma.game.delete({ where: { id } });
+  await recalculateGroupElo(group.id);
+  await recalculateGlobalElo();
   return new NextResponse(null, { status: 204 });
 }
