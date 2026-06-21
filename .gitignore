@@ -46,3 +46,7 @@ next-env.d.ts
 # local dev assets (screenshots, tesseract model)
 /assets/
 *.traineddata
+
+# local editor settings
+/.vscode/
+/.claude/

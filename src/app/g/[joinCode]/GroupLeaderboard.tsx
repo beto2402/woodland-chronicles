@@ -2,12 +2,19 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { FACTION_MAP, FactionIcon, getFactionStyle } from "@/components/FactionIcon";
+import { FACTION_MAP, FactionIcon, FactionPortrait, FACTIONS_WITH_PORTRAIT, getFactionStyle } from "@/components/FactionIcon";
 import { FactionSelect } from "@/components/FactionSelect";
 import { PlayerSelect } from "@/components/PlayerSelect";
 import { analyzeScreenshot, levenshtein } from "@/lib/screenshot-scan";
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
+// Emoji per stored VictoryType enum value — keeps footer victory tags the same
+// height as the format tag (which carries an emoji).
+const VICTORY_EMOJI: Record<string, string> = {
+  SCORE: "🔢",
+  DOMINATION: "👑",
+  COALITION: "🤝",
+};
 const MAX_PLAYERS = 6;
 const PROVISIONAL_THRESHOLD = 3;
 const emptyGameRow = () => ({ playerId: "", faction: "" });
@@ -57,7 +64,6 @@ const styles = `
   .rank { font-family: 'Cinzel', serif; font-size: 0.85rem; color: #5a6a4a; font-weight: 600; }
   .rank-1 { color: #c9922a; } .rank-2 { color: #a0a0a0; } .rank-3 { color: #8b5a2a; }
   .player-info { display: flex; flex-direction: column; gap: 2px; }
-  .player-name { font-weight: 700; font-size: 0.95rem; color: #f2e8d0; }
   .faction-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
   .faction-tag { font-size: 0.6rem; padding: 1px 6px 1px 3px; border-radius: 2px; border: 1px solid; opacity: 0.85; font-family: 'Lato', sans-serif; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 3px; }
   .stat { text-align: center; font-size: 0.88rem; }
@@ -75,18 +81,42 @@ const styles = `
   .loader-text { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.22em; color: #8a7a5a; text-transform: uppercase; }
 
   .game-log { display: flex; flex-direction: column; gap: 8px; }
-  .game-card { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
-  .game-date { font-size: 0.7rem; color: #5a6a4a; font-family: 'Cinzel', serif; letter-spacing: 0.1em; white-space: nowrap; flex-shrink: 0; }
-  .game-winner { flex: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-  .winner-label { font-size: 0.62rem; letter-spacing: 0.18em; color: var(--accent-label); text-transform: uppercase; font-family: 'Cinzel', serif; }
-  .winner-entry { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 16px; padding: 2px 0; }
-  .winner-name { font-weight: 700; font-size: 1.1rem; line-height: 1.2; color: #c9922a; }
-  .winner-faction { font-size: 0.92rem; color: #a0b090; display: inline-flex; align-items: center; gap: 8px; }
-  .game-players { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; max-width: 330px; flex-shrink: 0; }
-  .player-chip { font-size: 0.82rem; padding: 5px 10px 5px 6px; background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
-  .delete-btn { background: none; border: none; color: #3a4a3a; cursor: pointer; font-size: 1rem; padding: 4px; line-height: 1; transition: color 0.15s; flex-shrink: 0; }
+  /* Card is a size container so its grid can adapt to the card's own width
+     (which differs between the full-width mobile column and the half-width desktop column). */
+  .game-card { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 12px 16px; container-type: inline-size; }
+  /* Wide: footer tucks under the winner; losers + delete span both rows.
+     The 1fr top row absorbs the slack so the footer sits at the bottom. */
+  .game-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+      "winner losers delete"
+      "footer losers delete";
+    column-gap: 12px;
+  }
+  .game-body > .delete-btn, .game-body > .confirm-delete { grid-area: delete; }
+  /* Narrow: footer drops to its own full-width row so its tags never overflow. */
+  @container (max-width: 480px) {
+    .game-body {
+      grid-template-rows: auto auto;
+      grid-template-areas:
+        "winner losers delete"
+        "footer footer footer";
+    }
+  }
+  .game-winner { grid-area: winner; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+  .winner-label { font-size: 0.62rem; letter-spacing: 0.18em; color: var(--accent-label); text-transform: uppercase; font-family: 'Cinzel', serif; margin-bottom: 2px; }
+  .winner-entry { display: flex; flex-direction: row; align-items: flex-start; gap: 12px; }
+  .winner-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .winner-name { font-weight: 700; font-size: 1.15rem; line-height: 1.2; color: #c9922a; }
+  .winner-faction { font-size: 0.9rem; color: #a0b090; }
+  .game-players { grid-area: losers; display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
+  .player-chip { font-size: 0.85rem; color: #a0b090; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
+  .player-chip-name { line-height: 1.1; }
+  .delete-btn { background: none; border: none; color: #3a4a3a; cursor: pointer; font-size: 1rem; padding: 4px; line-height: 1; transition: color 0.15s; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; align-self: center; }
   .delete-btn:hover { color: #8b3a1a; }
-  .confirm-delete { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .confirm-delete { display: flex; align-items: center; gap: 6px; flex-shrink: 0; align-self: center; }
   .confirm-text { font-size: 0.72rem; color: #f2a866; white-space: nowrap; }
   .confirm-yes { background: #8b3a1a; border: none; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 4px 10px; transition: background 0.15s; }
   .confirm-yes:hover { background: #a04520; }
@@ -133,12 +163,18 @@ const styles = `
   .toggle-form-btn { display: flex; align-items: center; gap: 8px; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; color: #a0b090; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.18em; padding: 11px 18px; text-transform: uppercase; transition: all 0.15s; margin-top: 28px; width: 100%; justify-content: center; }
   .toggle-form-btn:hover { background: #1e341e; border-color: #5a6a4a; color: #f2e8d0; }
 
-  .victory-badge { font-size: 0.62rem; padding: 1px 6px; background: rgba(139,58,26,0.2); border: 1px solid #8b3a1a; border-radius: 2px; color: #c9922a; letter-spacing: 0.08em; width: fit-content; }
+  .game-footer { grid-area: footer; align-self: end; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 10px; }
+  .footer-date { font-family: 'Cinzel', serif; font-size: 0.66rem; letter-spacing: 0.1em; color: #7a8a6a; margin-right: 2px; }
+  .footer-tag { font-size: 0.6rem; padding: 2px 7px; border-radius: 2px; letter-spacing: 0.06em; border: 1px solid; white-space: nowrap; }
+  .tag-virtual { background: rgba(74,144,217,0.15); border-color: #4a90d955; color: #7ab0d0; }
+  .tag-inperson { background: rgba(90,138,58,0.2); border-color: #5a8a3a55; color: #8ab070; }
+  .tag-victory { background: rgba(139,58,26,0.2); border-color: #8b3a1a; color: #c9922a; }
+  .tag-hirelings { background: rgba(201,146,42,0.1); border-color: #c9922a44; color: #c9922a; }
 
   .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
   .stat-card { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 14px 12px; text-align: center; }
   .stat-card-value { font-family: 'Cinzel', serif; font-size: 1.6rem; color: #c9922a; font-weight: 700; line-height: 1; }
-  .stat-card-label { font-size: 0.62rem; color: #5a6a4a; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
+  .stat-card-label { font-size: 0.62rem; color: var(--accent-label); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
 
   .roster-grid { display: flex; flex-direction: column; gap: 6px; }
   .roster-row { display: flex; align-items: center; gap: 8px; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 8px 12px; }
@@ -192,15 +228,72 @@ const styles = `
   .faction-modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: #5a6a4a; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 4px 8px; border-radius: 3px; transition: color 0.15s; }
   .faction-modal-close:hover { color: #f2e8d0; }
   .faction-modal-title { font-family: 'Cinzel', serif; font-size: 1.1rem; color: #c9922a; margin-bottom: 2px; padding-right: 36px; }
-  .faction-modal-sub { font-size: 0.62rem; color: #5a6a4a; letter-spacing: 0.2em; text-transform: uppercase; font-family: 'Cinzel', serif; margin-bottom: 18px; }
+  .faction-modal-sub { font-size: 0.62rem; color: var(--accent-label); letter-spacing: 0.2em; text-transform: uppercase; font-family: 'Cinzel', serif; margin-bottom: 18px; }
   .faction-detail-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; margin-bottom: 6px; }
   .faction-detail-name { flex: 1; font-size: 0.88rem; color: #f2e8d0; }
   .faction-detail-stats { text-align: right; font-size: 0.8rem; color: #7a8a6a; line-height: 1.5; min-width: 88px; }
   .faction-detail-pct { font-size: 0.72rem; color: #a0b090; }
 
+  .player-name-btn { background: none; border: none; padding: 0; margin: 0; font-family: 'Lato', sans-serif; font-size: 0.95rem; font-weight: 700; line-height: 1.2; color: #f2e8d0; cursor: pointer; text-align: left; transition: color 0.15s; }
+  .player-name-btn:hover { color: #c9922a; text-decoration: underline; text-underline-offset: 2px; }
+
+  .profile-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding-right: 36px; }
+  .profile-avatar { width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0; object-fit: cover; border: 2px solid #2d3b2d; background: #152515; }
+  .profile-avatar-ph { display: flex; align-items: center; justify-content: center; color: #4a5a3a; }
+  .profile-name { font-family: 'Cinzel', serif; font-size: 1.3rem; color: #c9922a; line-height: 1.1; }
+  .profile-sub { font-size: 0.6rem; color: #5a6a4a; letter-spacing: 0.18em; text-transform: uppercase; font-family: 'Cinzel', serif; margin-top: 4px; }
+  .profile-stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 20px; }
+  .profile-stat { background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; padding: 11px 12px; }
+  .profile-stat-label { font-size: 0.72rem; color: var(--accent-label); letter-spacing: 0.08em; text-transform: uppercase; font-family: 'Lato', sans-serif; font-weight: 700; margin-bottom: 6px; }
+  .profile-stat-value { font-size: 1.05rem; color: #f2e8d0; font-weight: 700; display: flex; align-items: center; gap: 6px; min-height: 22px; }
+  .profile-stat-value.gold { color: #c9922a; font-family: 'Cinzel', serif; }
+  .profile-stat-fac { font-size: 0.85rem; font-weight: 700; }
+  .profile-stat-sub { font-size: 0.66rem; color: #7a8a6a; font-weight: 400; }
+  .profile-donut-section { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  .profile-legend { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
+  .profile-legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #d8e0c8; }
+  .profile-legend-dot { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.3); }
+  .profile-legend-name { flex: 1; }
+  .profile-legend-val { color: #7a8a6a; font-size: 0.72rem; white-space: nowrap; }
+  .profile-empty { font-size: 0.82rem; color: #5a6a4a; font-style: italic; padding: 8px 0; }
+  .profile-stat-portrait { width: 24px; height: 24px; border-radius: 5px; }
+  .profile-donut { width: 160px; height: 160px; }
+
+  /* Desktop has room — scale the whole profile up and go 3-wide on the stat grid. */
+  @media (min-width: 760px) {
+    .profile-modal { width: min(660px, 100%); padding: 34px 36px 30px; }
+    .profile-header { gap: 20px; margin-bottom: 24px; }
+    .profile-avatar { width: 92px; height: 92px; }
+    .profile-name { font-size: 1.8rem; }
+    .profile-sub { font-size: 0.7rem; }
+    .profile-stats-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 26px; }
+    .profile-stat { padding: 14px; }
+    .profile-stat-label { font-size: 0.82rem; margin-bottom: 8px; }
+    .profile-stat-value { font-size: 1.3rem; min-height: 36px; }
+    .profile-stat-fac { font-size: 1rem; }
+    .profile-stat-sub { font-size: 0.78rem; }
+    .profile-stat-portrait { width: 34px; height: 34px; border-radius: 6px; }
+    .profile-modal .faction-modal-sub { font-size: 0.7rem; }
+    .profile-donut { width: 210px; height: 210px; }
+    .profile-donut-section { gap: 30px; }
+    .profile-legend { min-width: 200px; gap: 8px; }
+    .profile-legend-row { font-size: 0.92rem; }
+    .profile-legend-dot { width: 13px; height: 13px; }
+  }
+
+  /* Standings + Battle Log stack on mobile, sit side by side on wider screens. */
+  .main-grid { display: flex; flex-direction: column; }
+  .main-col { min-width: 0; }
+  /* The section label leads each column; reset its top margin so columns align. */
+  .main-col > .section-label:first-child { margin-top: 24px; }
+
+  @media (min-width: 900px) {
+    .container { max-width: 1180px; }
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: start; }
+  }
+
   @media (max-width: 500px) {
     .form-grid { grid-template-columns: 1fr; }
-    .game-players { max-width: 170px; }
     .lb-row { grid-template-columns: 28px 1fr 60px 44px 50px; }
     .player-row { grid-template-columns: 1fr 1fr 32px; }
   }
@@ -239,16 +332,21 @@ export default function GroupLeaderboard({
   const [gamesPage, setGamesPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
   const [factionModal, setFactionModal] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
 
   const isCoalition = victoryType === "Coalition";
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => {
-    if (!factionModal) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFactionModal(null); };
+    if (!factionModal && !profileName) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setFactionModal(null);
+      setProfileName(null);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [factionModal]);
+  }, [factionModal, profileName]);
   useEffect(() => {
     if (session) {
       fetch("/api/me").then((r) => r.ok ? r.json() : null).then(setMe);
@@ -801,6 +899,8 @@ export default function GroupLeaderboard({
             </div>
           )}
 
+          <div className="main-grid">
+          <div className="main-col">
           <div className="section-label">Standings</div>
           <div className="leaderboard">
             <div className="lb-row lb-header">
@@ -817,7 +917,7 @@ export default function GroupLeaderboard({
                 <div key={p.name} className={`lb-row ${i === 0 ? "top-player" : ""}`}>
                   <span className={`rank rank-${i + 1}`}>{i + 1}</span>
                   <div className="player-info">
-                    <span className="player-name">{p.name}</span>
+                    <button className="player-name-btn" onClick={() => setProfileName(p.name)} title="View profile">{p.name}</button>
                     {p.factions.size > 0 && (
                       <div className="faction-count">
                         <span>{p.factions.size} {p.factions.size === 1 ? "faction" : "factions"}</span>
@@ -842,9 +942,10 @@ export default function GroupLeaderboard({
               ))
             )}
           </div>
+          </div>
 
           {sortedGames.length > 0 && (
-            <>
+            <div className="main-col">
               <div className="section-label">Battle Log</div>
               <div className="game-log">
                 {pagedGames.map((g) => {
@@ -852,62 +953,60 @@ export default function GroupLeaderboard({
                   const winnerNames = new Set(winners.map((w) => w.player.name));
                   return (
                     <div key={g.id} className="game-card">
-                      <div className="game-date">
-                        {g.date.slice(0, 10)}
-                        <div style={{ marginTop: 4 }}>
-                          <span style={{
-                            fontSize: "0.6rem", padding: "1px 5px",
-                            background: !g.isVirtual ? "rgba(90,138,58,0.2)" : "rgba(74,144,217,0.15)",
-                            border: `1px solid ${!g.isVirtual ? "#5a8a3a55" : "#4a90d955"}`,
-                            borderRadius: 2,
-                            color: !g.isVirtual ? "#8ab070" : "#7ab0d0",
-                            letterSpacing: "0.06em",
-                          }}>
-                            {!g.isVirtual ? "🎲 In Person" : "🖥️ Virtual"}
-                          </span>
+                      <div className="game-body">
+                        <div className="game-winner">
+                          {winners.map((w, idx) => {
+                            const wf = FACTION_MAP[w.faction];
+                            return (
+                              <div key={w.player.name} className="winner-entry">
+                                {wf && <FactionIcon id={w.faction} size={72} />}
+                                <div className="winner-text">
+                                  {idx === 0 && <span className="winner-label">{winners.length > 1 ? "Coalition" : "Victor"}</span>}
+                                  <span className="winner-name">{w.player.name}</span>
+                                  <span className="winner-faction">{wf ? wf.name : w.faction}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        {g.hasHirelings && (
-                          <div style={{ marginTop: 4 }}>
-                            <span style={{ fontSize: "0.6rem", padding: "1px 5px", background: "rgba(201,146,42,0.1)", border: "1px solid #c9922a44", borderRadius: 2, color: "#c9922a", letterSpacing: "0.06em" }}>
-                              Hirelings
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="game-winner">
-                        <span className="winner-label">{winners.length > 1 ? "Coalition" : "Victor"}</span>
-                        {winners.map((w) => {
-                          const wf = FACTION_MAP[w.faction];
-                          return (
-                            <div key={w.player.name} className="winner-entry">
-                              <span className="winner-name">{w.player.name}</span>
-                              <span className="winner-faction">
-                                {wf ? <><FactionIcon id={w.faction} size={28} /> {wf.name}</> : w.faction}
+                        <div className="game-players">
+                          <span className="winner-label">Retards</span>
+                          {g.players.filter((p) => !winnerNames.has(p.player.name)).map((p) => {
+                            const pf = FACTION_MAP[p.faction];
+                            return (
+                              <span key={p.player.name} className="player-chip">
+                                {pf ? <FactionPortrait id={p.faction} size={26} radius={4} /> : null}
+                                <span className="player-chip-name">{p.player.name}</span>
                               </span>
-                            </div>
-                          );
-                        })}
-                        <div className="victory-badge" style={{ marginTop: 4 }}>{g.victoryType}</div>
-                      </div>
-                      <div className="game-players">
-                        {g.players.filter((p) => !winnerNames.has(p.player.name)).map((p) => {
-                          const pf = FACTION_MAP[p.faction];
-                          return (
-                            <span key={p.player.name} className="player-chip">
-                              {pf ? <FactionIcon id={p.faction} size={30} /> : null} {p.player.name}
-                            </span>
-                          );
-                        })}
-                      </div>
-                      {confirmDeleteId === g.id ? (
-                        <div className="confirm-delete">
-                          <span className="confirm-text">Delete?</span>
-                          <button className="confirm-yes" onClick={() => { deleteGame(g.id); setConfirmDeleteId(null); }}>Yes</button>
-                          <button className="confirm-no" onClick={() => setConfirmDeleteId(null)}>No</button>
+                            );
+                          })}
                         </div>
-                      ) : (
-                        <button className="delete-btn" onClick={() => setConfirmDeleteId(g.id)} title="Delete">✕</button>
-                      )}
+                        {confirmDeleteId === g.id ? (
+                          <div className="confirm-delete">
+                            <span className="confirm-text">Delete?</span>
+                            <button className="confirm-yes" onClick={() => { deleteGame(g.id); setConfirmDeleteId(null); }}>Yes</button>
+                            <button className="confirm-no" onClick={() => setConfirmDeleteId(null)}>No</button>
+                          </div>
+                        ) : (
+                          <button className="delete-btn" onClick={() => setConfirmDeleteId(g.id)} title="Delete">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M3 6h18" />
+                              <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </button>
+                        )}
+                        <div className="game-footer">
+                          <span className="footer-date">{g.date.slice(0, 10)}</span>
+                          <span className={`footer-tag ${g.isVirtual ? "tag-virtual" : "tag-inperson"}`}>
+                            {g.isVirtual ? "🖥️ Virtual" : "🎲 In Person"}
+                          </span>
+                          <span className="footer-tag tag-victory">{VICTORY_EMOJI[g.victoryType]} {g.victoryType}</span>
+                          {g.hasHirelings && <span className="footer-tag tag-hirelings">🐾 Hirelings</span>}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -943,8 +1042,9 @@ export default function GroupLeaderboard({
                   </div>
                 );
               })()}
-            </>
+            </div>
           )}
+          </div>
           </>
           )}
         </div>
@@ -973,6 +1073,140 @@ export default function GroupLeaderboard({
                   </div>
                 );
               })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {profileName && (() => {
+        const entry = leaderboard.find((x) => x.name === profileName);
+        if (!entry) return null;
+        const rosterEntry = roster.find((r) => r.player.name.toLowerCase() === profileName.toLowerCase());
+        const googleImage = rosterEntry?.player.claimedBy?.image ?? null;
+        const googleName = rosterEntry?.player.claimedBy?.name ?? null;
+
+        const factionsPlayed = Object.entries(entry.factionDetail); // [fid, { games, wins }]
+        const totalFactionGames = factionsPlayed.reduce((s, [, d]) => s + d.games, 0);
+        const mostPlayed = [...factionsPlayed].sort((a, b) => b[1].games - a[1].games)[0] ?? null;
+        const mostPlayedFid = mostPlayed ? mostPlayed[0] : null;
+        // Avatar: Google photo if claimed, else the most-played faction's portrait, else a silhouette.
+        const avatarSrc = googleImage
+          ?? (mostPlayedFid && FACTIONS_WITH_PORTRAIT.has(mostPlayedFid)
+            ? `/art/icons/${mostPlayedFid}-portrait.jpg`
+            : null);
+
+        // Dominant / weakest faction by win rate, only among factions played 2+ times.
+        const eligible = factionsPlayed
+          .filter(([, d]) => d.games >= 2)
+          .map(([fid, d]) => ({ fid, games: d.games, wins: d.wins, rate: d.wins / d.games }))
+          .sort((a, b) => b.rate - a.rate || b.games - a.games);
+        const dominant = eligible.length > 0 ? eligible[0] : null;
+        const noob = eligible.length > 1 ? eligible[eligible.length - 1] : null;
+
+        const winPct = entry.games > 0 ? Math.round((entry.wins / entry.games) * 100) : 0;
+        const provisional = entry.games < PROVISIONAL_THRESHOLD;
+        const facLabel = (fid: string) => FACTION_MAP[fid]?.name ?? fid;
+
+        // Donut segments (faction distribution by games played).
+        const R = 60, CIRC = 2 * Math.PI * R;
+        const segs = [...factionsPlayed]
+          .map(([fid, d]) => ({ fid, games: d.games, frac: d.games / totalFactionGames }))
+          .sort((a, b) => b.games - a.games);
+        let acc = 0;
+
+        return (
+          <div className="faction-modal-backdrop" onClick={() => setProfileName(null)}>
+            <div className="faction-modal profile-modal" onClick={(e) => e.stopPropagation()}>
+              <button className="faction-modal-close" onClick={() => setProfileName(null)}>✕</button>
+
+              <div className="profile-header">
+                {avatarSrc ? (
+                  <img className="profile-avatar" src={avatarSrc} alt={profileName} referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="profile-avatar profile-avatar-ph">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="8.5" r="4" />
+                      <path d="M4 21c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5z" />
+                    </svg>
+                  </div>
+                )}
+                <div>
+                  <div className="profile-name">{profileName}</div>
+                  <div className="profile-sub">{googleName ?? "Unclaimed denizen"}</div>
+                </div>
+              </div>
+
+              <div className="profile-stats-grid">
+                <div className="profile-stat">
+                  <div className="profile-stat-label">Games Played</div>
+                  <div className="profile-stat-value">{entry.games}</div>
+                </div>
+                <div className="profile-stat">
+                  <div className="profile-stat-label">Win Rate</div>
+                  <div className="profile-stat-value">{winPct}%<span className="profile-stat-sub">{entry.wins}W</span></div>
+                </div>
+                <div className="profile-stat">
+                  <div className="profile-stat-label">ELO</div>
+                  <div className="profile-stat-value gold">{provisional ? "~" : ""}{entry.groupElo}{provisional && <span className="profile-stat-sub">prov.</span>}</div>
+                </div>
+                <div className="profile-stat">
+                  <div className="profile-stat-label">Most Played</div>
+                  <div className="profile-stat-value">
+                    {mostPlayed
+                      ? <><FactionPortrait id={mostPlayed[0]} size={26} className="profile-stat-portrait" /><span className="profile-stat-fac">{facLabel(mostPlayed[0])}</span></>
+                      : "—"}
+                  </div>
+                </div>
+                <div className="profile-stat">
+                  <div className="profile-stat-label">Most Dominant</div>
+                  <div className="profile-stat-value">
+                    {dominant
+                      ? <><FactionPortrait id={dominant.fid} size={26} className="profile-stat-portrait" /><span className="profile-stat-fac">{facLabel(dominant.fid)}</span><span className="profile-stat-sub">{Math.round(dominant.rate * 100)}%</span></>
+                      : <span className="profile-stat-sub">Need 2+ games on a faction</span>}
+                  </div>
+                </div>
+                <div className="profile-stat">
+                  <div className="profile-stat-label">Most Retarded</div>
+                  <div className="profile-stat-value">
+                    {noob
+                      ? <><FactionPortrait id={noob.fid} size={26} className="profile-stat-portrait" /><span className="profile-stat-fac">{facLabel(noob.fid)}</span><span className="profile-stat-sub">{Math.round(noob.rate * 100)}%</span></>
+                      : <span className="profile-stat-sub">Not enough variety yet</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="faction-modal-sub">Faction Distribution</div>
+              {totalFactionGames === 0 ? (
+                <div className="profile-empty">No games recorded yet.</div>
+              ) : (
+                <div className="profile-donut-section">
+                  <svg className="profile-donut" width="160" height="160" viewBox="0 0 160 160">
+                    <g transform="rotate(-90 80 80)">
+                      {segs.map((s) => {
+                        const dash = s.frac * CIRC;
+                        const offset = -acc * CIRC;
+                        acc += s.frac;
+                        return (
+                          <circle key={s.fid} cx="80" cy="80" r={R} fill="none"
+                            stroke={FACTION_MAP[s.fid]?.color ?? "#5a6a4a"} strokeWidth="26"
+                            strokeDasharray={`${dash} ${CIRC - dash}`} strokeDashoffset={offset} />
+                        );
+                      })}
+                    </g>
+                    <text x="80" y="78" textAnchor="middle" fontFamily="'Cinzel', serif" fontSize="24" fontWeight="700" fill="#c9922a">{entry.games}</text>
+                    <text x="80" y="94" textAnchor="middle" fontFamily="'Cinzel', serif" fontSize="8" letterSpacing="2" fill="#5a6a4a">GAMES</text>
+                  </svg>
+                  <div className="profile-legend">
+                    {segs.map((s) => (
+                      <div key={s.fid} className="profile-legend-row">
+                        <span className="profile-legend-dot" style={{ background: FACTION_MAP[s.fid]?.color ?? "#5a6a4a" }} />
+                        <span className="profile-legend-name">{facLabel(s.fid)}</span>
+                        <span className="profile-legend-val">{s.games} · {Math.round(s.frac * 100)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );

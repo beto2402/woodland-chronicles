@@ -39,7 +39,7 @@ The core UI. Fetches roster and games from API on load.
 
 **Game log panel:**
 - Lists all games newest first
-- Delete button visible to: the user who logged it OR group ADMINs. Clicking it swaps the ✕ for an inline "Delete? Yes / No" confirmation (tracked by `confirmDeleteId`) — deletion only happens on "Yes", guarding against accidental clicks
+- Delete button visible to: the user who logged it OR group ADMINs. Clicking it swaps the trash icon for an inline "Delete? Yes / No" confirmation (tracked by `confirmDeleteId`) — deletion only happens on "Yes", guarding against accidental clicks
 - Log Game form (members only):
   - Date, Virtual/In-Person toggle, Hirelings toggle
   - Victory type: Score / Domination / Coalition
@@ -53,7 +53,7 @@ The core UI. Fetches roster and games from API on load.
 **Leaderboard panel:**
 - Aggregates wins, games, faction set, and per-faction detail (games + wins per faction) from all game records
 - Sorted by `groupElo` descending (highest ELO first)
-- Displays: rank, player name + faction count with detail button, ELO (gold), wins, games + win%
+- Displays: rank, player name (clickable — opens the Player Profile Modal) + faction count with detail button, ELO (gold), wins, games + win%
 
 **Faction Detail Modal** (`factionModal` state — player name or null):
 - Opened by clicking "see details" under a player's name in the leaderboard
@@ -62,8 +62,24 @@ The core UI. Fetches roster and games from API on load.
 - Lists each faction the player has played, sorted by games played descending: icon + full name + "XW / YG" + win rate %
 - All data is pre-computed from in-memory game state; opens instantly with no fetch
 
+**Player Profile Modal** (`profileName` state — player name or null):
+- Opened by clicking a player's name in the leaderboard standings; closed via backdrop, ✕, or Escape (shares the Escape handler with the Faction Detail Modal). Reuses the `faction-modal` backdrop/card styles.
+- **Group-scoped**: all stats come from this group's games + `groupElo` — no fetch, computed from the in-memory `leaderboard` entry (and `roster` for the avatar).
+- **Header**: avatar + name + sub-line. Avatar priority: claimed user's Google image (`player.claimedBy.image`, `referrerPolicy="no-referrer"`) → the player's **most-played faction portrait** (`FactionPortrait`) → a generic SVG silhouette placeholder (future custom avatars slot in here). Sub-line shows the Google display name, or "Unclaimed denizen".
+- **Stat grid** (6 cells): Games Played, Win Rate (+ win count), ELO (gold, with `~`/"prov." when `games < PROVISIONAL_THRESHOLD`), Most Played faction, Most Dominant faction, Most Noob faction. The three faction cells render `FactionPortrait` thumbnails.
+- **Desktop scaling** (`@media (min-width: 760px)`): the card widens (~660px) and the whole profile scales up — larger avatar/name, the stat grid goes from 2 to 3 columns, bigger portraits/fonts, and a larger donut.
+  - "Most Dominant" / "Most Noob" = highest / lowest **win rate among factions played 2+ times** (avoids 1-game flukes). Dominant needs ≥1 eligible faction, Noob needs ≥2; otherwise a "Need 2+ games…" / "Not enough variety yet" hint shows.
+- **Faction Distribution donut**: hand-rolled SVG donut (no chart library) — one `<circle>` arc per faction via `stroke-dasharray`/`stroke-dashoffset`, colored by `FACTION_MAP[id].color`, segments sized by games played and sorted descending. Center shows total games. Accompanied by a legend (color dot + name + "games · %").
+
 **Battle Log (paginated):**
 - Games listed newest-first
+- Each card (`.game-card`) is a CSS **size container** (`container-type: inline-size`); its `.game-body` grid adapts to the card's own width (which differs between the full-width mobile column and the half-width desktop column). Grid areas: `winner | losers | delete`, plus `footer`.
+  - **Wide cards**: two-row grid where the footer (`footer` area) tucks under the winner in the left column while losers + delete span both rows; the `1fr` top row absorbs the slack so the footer sits at the bottom, filling the space the taller losers column creates.
+  - **Narrow cards** (`@container (max-width: 480px)`): the footer drops to its own full-width row beneath everything, so its tags never overflow the cramped winner column.
+  - **winner** (`.game-winner`, a flex column): a large 72px `FactionIcon` beside a text column stacking the "Victor"/"Coalition" label, player name, and faction name. Tops align with the "Losers" label.
+  - **other players**: a single vertical column of borderless rows under a "Losers" label (`.game-players` → `.player-chip`: a small 26px `FactionPortrait` + name, no box/border).
+  - **delete** control (trash icon) vertically centered on the far right (`align-self: center`).
+  - Footer contents (one line, `.footer-date` + `.footer-tag` variants): date, format tag (🖥️ Virtual / 🎲 In Person), victory type, and a Hirelings tag when applicable — each tag carries an emoji so they share height.
 - Paginated: 5 / 10 / 15 per page, configurable via page-size selector (page resets to 0 on change)
 - Shows page X of Y, element range (e.g. "1–5 of 18 battles"), Prev/Next buttons
 - `safePage = Math.min(gamesPage, totalPages - 1)` guards against out-of-range when page size changes
@@ -76,6 +92,8 @@ The core UI. Fetches roster and games from API on load.
 5. Log Battle form (when open)
 6. Standings (ELO leaderboard)
 7. Battle Log + pagination
+
+Standings and Battle Log are wrapped in a `.main-grid`: a single stacked column on mobile, switching to a two-column side-by-side layout at `min-width: 900px` (container also widens to 1180px) so more is visible without scrolling.
 
 **Key derived state:**
 - `isMember`: `!!me && roster.some(r => r.player.claimedBy?.id === me.id)`
@@ -101,10 +119,21 @@ Root layout. Wraps children in `<Providers>`. Loads global CSS.
 
 ### `src/components/FactionIcon.tsx`
 Exports:
-- `FACTIONS` — array of 14 faction objects `{ id, name, color, textColor, symbol }`
+- `FACTIONS` — array of 14 faction objects `{ id, name, symbol, color, altColor }`. `color` is a
+  hand-tuned primary; `altColor` is a second usable shade sampled from each faction's portrait
+  background (`public/art/icons/<id>-portrait.jpg`), giving a two-shade range for charts/diagrams.
+  (Vagabond's sampled white is nudged to a usable grey; `knaves`/`vagabond2` are absent from the
+  source chart, so their `altColor` is a derived lighter shade.)
 - `FACTION_MAP` — `Record<id, faction>` for O(1) lookup
 - `getFactionStyle(id)` — inline style `{ background, color, borderColor }` for faction-colored chips
 - `FactionIcon({ id, size })` — renders `<img src="/art/icons/<id>.webp" />` at given size (default 20px)
+- `FactionPortrait({ id, size?, radius?, className? })` — renders the larger cartoon portrait
+  `<img src="/art/icons/<id>-portrait.jpg" />` (object-fit cover, rounded). Falls back to `FactionIcon`
+  for factions without a portrait. With `className` set, sizing is left to CSS (responsive); otherwise
+  `size` sets inline width/height.
+- `FACTIONS_WITH_PORTRAIT` — `Set<id>` of the 12 factions that have a portrait (all but knaves, vagabond2)
+- Portrait art (`public/art/icons/<id>-portrait.jpg`, 12 of the 14 factions) — cartoon faction
+  portraits cropped from `public/art/factions-chart.jpeg`; source of the `altColor` values above
 
 ### `src/components/FactionSelect.tsx`
 Combobox faction picker. Props: `{ value: string, onChange: (id: string) => void }`.
