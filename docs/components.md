@@ -85,7 +85,7 @@ The core UI. Fetches roster and games from API on load.
 - `safePage = Math.min(gamesPage, totalPages - 1)` guards against out-of-range when page size changes
 
 **Page layout order (top to bottom):**
-1. Stats cards (Games Played, Denizens, Top Faction) — only shown when games exist
+1. Stats cards (Games Played, Denizens, Top Faction) — only shown when games exist; the Top Faction card gets the full flashy treatment (`.shimmer-card`: animated gold border, glint, pulsing glow — same as the loser banner). Followed by two award banners (each only with 2+ players): the **"Least Retarded" award** (`.champ-award`, understated calm-gold styling) for the highest-`groupElo` player (`topPlayer` = first leaderboard entry), then the **"Stupid Ass Nigga Award" award** (`.loser-award`, very flashy animated golden banner) for the lowest-`groupElo` player (`biggestLoser` = last leaderboard entry). All animations respect `prefers-reduced-motion`.
 2. Join banner — only when signed in but not a member
 3. Roster management — only when `isMember`; collapsed behind "manage" toggle by default
 4. "Log a Battle" toggle button — only when `isMember`

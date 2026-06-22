@@ -176,6 +176,81 @@ const styles = `
   .stat-card-value { font-family: 'Cinzel', serif; font-size: 1.6rem; color: #c9922a; font-weight: 700; line-height: 1; }
   .stat-card-label { font-size: 0.62rem; color: var(--accent-label); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
 
+  /* Sarcastic "Stupid Ass Nigga Award" award — very flashy: animated shiny golden border,
+     a glint that sweeps across, a pulsing glow, bobbing trophies, gold gradient text. */
+  .loser-award {
+    position: relative; margin-top: 10px; border-radius: 7px; padding: 13px 18px; overflow: hidden;
+    display: flex; align-items: center; gap: 14px; border: 2px solid transparent;
+    background:
+      linear-gradient(135deg, #2c2207 0%, #46380e 45%, #5c4a12 60%, #2c2207 100%) padding-box,
+      linear-gradient(110deg, #7a5e16, #ffe9a0, #c9922a, #fff6cf, #b8861f, #ffe9a0, #7a5e16) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: loserBorder 3s linear infinite, loserGlow 1.8s ease-in-out infinite alternate;
+  }
+  .loser-award::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255,243,200,0.40) 50%, transparent 65%);
+    transform: translateX(-120%); animation: loserShine 3.2s ease-in-out infinite;
+  }
+  @keyframes loserBorder { to { background-position: 0 0, 300% 0; } }
+  @keyframes loserShine { 0% { transform: translateX(-120%); } 55%, 100% { transform: translateX(120%); } }
+  @keyframes loserGlow {
+    from { box-shadow: 0 0 10px rgba(201,146,42,0.45), inset 0 0 14px rgba(255,220,140,0.12); }
+    to   { box-shadow: 0 0 26px rgba(255,219,130,0.85), inset 0 0 22px rgba(255,230,160,0.22); }
+  }
+  .loser-medal { font-size: 1.9rem; line-height: 1; flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(255,220,130,0.8)); animation: loserBob 1.6s ease-in-out infinite; }
+  .loser-medal-right { animation-delay: 0.8s; }
+  @keyframes loserBob { 0%,100% { transform: translateY(0) rotate(-6deg); } 50% { transform: translateY(-3px) rotate(6deg); } }
+  .loser-text { flex: 1; text-align: center; position: relative; z-index: 1; min-width: 0; }
+  .loser-label { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: #ffe9a0; text-shadow: 0 0 8px rgba(255,210,120,0.6); }
+  .loser-name { font-family: 'Cinzel', serif; font-weight: 700; font-size: 1.5rem; line-height: 1.15; margin-top: 2px;
+    background: linear-gradient(180deg, #fff6cf 0%, #ffd86b 45%, #c9922a 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.55)); }
+  .loser-sub { font-size: 0.62rem; letter-spacing: 0.12em; color: #e8c987; text-transform: uppercase; margin-top: 3px; opacity: 0.85; }
+  /* "Least Retarded" champion award — same idea as the loser banner but understated:
+     calm static gold border, soft static glow, a slow faint glint, no bobbing/pulsing. */
+  .champ-award {
+    position: relative; margin-top: 10px; border-radius: 7px; padding: 12px 18px; overflow: hidden;
+    display: flex; align-items: center; gap: 14px; border: 1px solid #5e5026;
+    background: linear-gradient(135deg, #1d2a17 0%, #25341a 50%, #1d2a17 100%);
+    box-shadow: 0 0 10px rgba(201,146,42,0.16), inset 0 0 18px rgba(201,146,42,0.05);
+  }
+  .champ-award::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,240,200,0.16) 50%, transparent 60%);
+    transform: translateX(-120%); animation: champShine 5.5s ease-in-out infinite;
+  }
+  @keyframes champShine { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(120%); } }
+  .champ-crown { font-size: 1.55rem; line-height: 1; flex-shrink: 0; filter: drop-shadow(0 0 4px rgba(201,146,42,0.4)); }
+  .champ-text { flex: 1; text-align: center; position: relative; z-index: 1; min-width: 0; }
+  .champ-label { font-family: 'Cinzel', serif; font-size: 0.58rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent-label); }
+  .champ-name { font-family: 'Cinzel', serif; font-weight: 700; font-size: 1.35rem; line-height: 1.15; margin-top: 2px;
+    background: linear-gradient(180deg, #f0d488, #c9922a); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .champ-sub { font-size: 0.6rem; letter-spacing: 0.12em; color: #8a9a6a; text-transform: uppercase; margin-top: 3px; }
+
+  /* Top Faction stat card — as flashy as the loser: animated shiny gold border, glint, pulsing glow. */
+  .shimmer-card {
+    position: relative; overflow: hidden; border: 2px solid transparent;
+    background:
+      linear-gradient(135deg, #2c2207 0%, #46380e 45%, #5c4a12 60%, #2c2207 100%) padding-box,
+      linear-gradient(110deg, #7a5e16, #ffe9a0, #c9922a, #fff6cf, #b8861f, #ffe9a0, #7a5e16) border-box;
+    background-size: 100% 100%, 300% 100%;
+    animation: loserBorder 3s linear infinite, loserGlow 1.8s ease-in-out infinite alternate;
+  }
+  .shimmer-card::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(115deg, transparent 35%, rgba(255,243,200,0.40) 50%, transparent 65%);
+    transform: translateX(-120%); animation: loserShine 3.2s ease-in-out infinite;
+  }
+  .shimmer-card .stat-card-value, .shimmer-card .stat-card-label { position: relative; z-index: 1; }
+  .shimmer-card .stat-card-label { color: #ffe9a0; text-shadow: 0 0 8px rgba(255,210,120,0.6); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loser-award, .loser-award::before, .loser-medal,
+    .champ-award::before, .shimmer-card, .shimmer-card::before { animation: none; }
+  }
+
   .roster-grid { display: flex; flex-direction: column; gap: 6px; }
   .roster-row { display: flex; align-items: center; gap: 8px; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 8px 12px; }
   .roster-name { flex: 1; font-size: 0.9rem; color: #f2e8d0; }
@@ -558,6 +633,11 @@ export default function GroupLeaderboard({
     .map((p) => ({ ...p, groupElo: rosterElo[p.name.toLowerCase()] ?? 1000 }))
     .sort((a, b) => b.groupElo - a.groupElo);
 
+  // The lowest-ELO denizen — our (sarcastic) "Stupid Ass Nigga Award". Needs 2+ players to mean anything.
+  const biggestLoser = leaderboard.length >= 2 ? leaderboard[leaderboard.length - 1] : null;
+  // The highest-ELO denizen — the (less sarcastic) "Least Retarded". Needs 2+ players.
+  const topPlayer = leaderboard.length >= 2 ? leaderboard[0] : null;
+
   const factionWins: Record<string, number> = {};
   for (const game of games) {
     for (const p of game.players) {
@@ -632,11 +712,33 @@ export default function GroupLeaderboard({
                   <div className="stat-card-value">{leaderboard.length}</div>
                   <div className="stat-card-label">Denizens</div>
                 </div>
-                <div className="stat-card">
+                <div className={`stat-card${topFaction ? " shimmer-card" : ""}`}>
                   <div className="stat-card-value">{topFaction && topFactionId ? <FactionIcon id={topFactionId} size={60} /> : "—"}</div>
                   <div className="stat-card-label">{topFaction ? "Top Faction" : "No Data"}</div>
                 </div>
               </div>
+              {topPlayer && (
+                <div className="champ-award">
+                  <span className="champ-crown" aria-hidden="true">👑</span>
+                  <div className="champ-text">
+                    <div className="champ-label">Least Retarded</div>
+                    <div className="champ-name">{topPlayer.name}</div>
+                    <div className="champ-sub">Top of the heap · {topPlayer.groupElo} ELO</div>
+                  </div>
+                  <span className="champ-crown" aria-hidden="true">👑</span>
+                </div>
+              )}
+              {biggestLoser && (
+                <div className="loser-award">
+                  <span className="loser-medal" aria-hidden="true">🏆</span>
+                  <div className="loser-text">
+                    <div className="loser-label">Stupid Ass Nigga Award</div>
+                    <div className="loser-name">{biggestLoser.name}</div>
+                    <div className="loser-sub">Dead last · {biggestLoser.groupElo} ELO</div>
+                  </div>
+                  <span className="loser-medal loser-medal-right" aria-hidden="true">🏆</span>
+                </div>
+              )}
             </>
           )}
 
