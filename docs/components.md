@@ -21,6 +21,19 @@ Looks up the group by join code. Returns 404 if not found. Renders `<GroupLeader
 
 ---
 
+### `src/app/g/[joinCode]/hall-of-fame/page.tsx` — Hall of Fame page (server component)
+Looks up the group by join code. Returns 404 if not found. Renders `<HallOfFame>`.
+
+### `src/app/g/[joinCode]/hall-of-fame/HallOfFame.tsx` — Hall of Fame (client component)
+Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me`. Sections:
+- **Womp Womp Hall** — per-player count of games lost with exactly 29 points (derived from scores); count shown below the name, sorted high→low.
+- **Records** — Blowout (biggest 1st/2nd gap) and Nail-biter (smallest gap), per game, derived from scores.
+- **Moments** — cards (kind badge, title, game context, optional screenshot, description); creator can delete. Each moment has a `kind`: 🏅 Glory (smart play) or 🤡 Tard (dumb moment), chosen in the record form and shown as a colored left border + badge.
+
+Members get a "+ Record a Moment" form: pick a game, title, description, optional image. The image is uploaded via `POST /api/upload` first, then its URL is saved with the moment. Reached via the "🏛 Hall of Fame" link on the group page hero.
+
+---
+
 ### `src/app/g/[joinCode]/GroupLeaderboard.tsx` — Main leaderboard (client component)
 The core UI. Fetches roster and games from API on load.
 
@@ -43,7 +56,9 @@ The core UI. Fetches roster and games from API on load.
 - Log Game form (members only):
   - Date, Virtual/In-Person toggle, Hirelings toggle
   - Victory type: Score / Domination / Coalition
-  - Player rows: name (from roster), faction, winner checkbox
+  - Player rows: name (from roster), faction, optional score (VP) input, winner checkbox
+  - Scores are all-or-none: client blocks submit if some rows have a score and others don't (server enforces the same). Scores show in the battle log next to each player (`name · score`).
+  - Leaderboard has an **Avg** column = mean score across that player's scored games (`–` if they have none).
   - Faction field is a type-to-filter combobox (`FactionSelect`): focus shows the full list, typing filters by name/id, arrow keys + Enter to select, click-outside/Escape to close
   - **Screenshot scan** ("📷 Scan screenshot to prefill" button): uses Tesseract.js (lazy-loaded ~15 MB, cached after first use) to OCR the image. Clusters all detected text by Y centroid (±20 px tolerance) and picks the cluster in the bottom 40% of the image that spans the widest horizontal range — that's the player names row, since all names appear side-by-side in the Root end-game screen. Names are sorted left-to-right. For each name, the banner color is sampled just below the text bounding box and matched to the nearest `FACTION_REF_COLORS` entry (Euclidean RGB distance, deduplicating across players). Pre-fills player rows with: roster match if name found case-insensitively, otherwise raw OCR text; plus matched faction. `scanning` state disables the button and shows "⏳ Scanning…" while OCR runs.
 

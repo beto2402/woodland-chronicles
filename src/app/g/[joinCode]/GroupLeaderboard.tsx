@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { FACTION_MAP, FactionIcon, FactionPortrait, FACTIONS_WITH_PORTRAIT, getFactionStyle } from "@/components/FactionIcon";
 import { FactionSelect } from "@/components/FactionSelect";
@@ -17,13 +18,13 @@ const VICTORY_EMOJI: Record<string, string> = {
 };
 const MAX_PLAYERS = 6;
 const PROVISIONAL_THRESHOLD = 3;
-const emptyGameRow = () => ({ playerId: "", faction: "" });
+const emptyGameRow = () => ({ playerId: "", faction: "", score: "" });
 
 
 type Player = { id: string; name: string; claimedBy?: { id: string; name: string; image: string } | null };
 type RosterEntry = { playerId: string; role: string; groupElo: number; player: Player };
 type Me = { id: string; name: string | null; email: string; claimedPlayer: { id: string; name: string } | null };
-type GamePlayer = { id: string; playerId: string; faction: string; isWinner: boolean; player: Player };
+type GamePlayer = { id: string; playerId: string; faction: string; isWinner: boolean; score: number | null; player: Player };
 type Game = {
   id: string;
   date: string;
@@ -50,12 +51,14 @@ const styles = `
   .hero-sub { font-family: 'Cinzel', serif; font-size: 0.78rem; letter-spacing: 0.22em; color: #8a7a5a; margin-top: 6px; text-transform: uppercase; }
   .join-code { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.18em; color: #5a6a4a; margin-top: 10px; }
   .join-code span { color: #c9922a; letter-spacing: 0.25em; }
+  .hof-link { display: inline-block; margin-top: 12px; font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.12em; color: #c9922a; text-decoration: none; border: 1px solid #2d3b2d; border-radius: 4px; padding: 5px 12px; transition: all 0.15s; }
+  .hof-link:hover { background: rgba(201,146,42,0.1); border-color: #c9922a; }
 
   .container { max-width: 780px; margin: 0 auto; padding: 0 16px; }
   .section-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--accent-label); text-transform: uppercase; margin: 32px 0 12px; }
 
   .leaderboard { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; overflow: hidden; }
-  .lb-row { display: grid; grid-template-columns: 36px 1fr 76px 56px 60px; gap: 0; align-items: center; padding: 10px 16px; border-bottom: 1px solid #1e2e1e; transition: background 0.15s; }
+  .lb-row { display: grid; grid-template-columns: 36px 1fr 76px 56px 52px 60px; gap: 0; align-items: center; padding: 10px 16px; border-bottom: 1px solid #1e2e1e; transition: background 0.15s; }
   .lb-row:last-child { border-bottom: none; }
   .lb-header { background: #152515; padding: 8px 16px; }
   .lb-header span { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.2em; color: #5a6a4a; text-transform: uppercase; }
@@ -68,6 +71,7 @@ const styles = `
   .faction-tag { font-size: 0.6rem; padding: 1px 6px 1px 3px; border-radius: 2px; border: 1px solid; opacity: 0.85; font-family: 'Lato', sans-serif; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 3px; }
   .stat { text-align: center; font-size: 0.88rem; }
   .stat-wins { color: #c9922a; font-weight: 700; font-size: 1rem; }
+  .stat-avg { color: #a0b090; font-size: 0.9rem; }
   .stat-elo { font-family: 'Cinzel', serif; color: #c9922a; font-weight: 700; font-size: 1rem; text-align: center; }
   .stat-elo.provisional { color: #7a6a40; }
   .stat-elo-label { font-size: 0.6rem; color: #5a6a4a; letter-spacing: 0.08em; text-align: center; }
@@ -146,7 +150,8 @@ const styles = `
 
   .players-section { margin-top: 16px; }
   .players-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-  .player-row { display: grid; grid-template-columns: 1fr 1fr 32px; gap: 8px; align-items: center; }
+  .player-row { display: grid; grid-template-columns: 1fr 1fr 56px 32px; gap: 8px; align-items: center; }
+  .score-field input { width: 100%; }
   .remove-player { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-size: 0.9rem; height: 34px; width: 32px; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
   .remove-player:hover { border-color: #8b3a1a; color: #8b3a1a; }
   .add-player-btn { margin-top: 8px; background: none; border: 1px dashed #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.8rem; padding: 7px; width: 100%; transition: all 0.15s; letter-spacing: 0.05em; }
@@ -369,8 +374,8 @@ const styles = `
 
   @media (max-width: 500px) {
     .form-grid { grid-template-columns: 1fr; }
-    .lb-row { grid-template-columns: 28px 1fr 60px 44px 50px; }
-    .player-row { grid-template-columns: 1fr 1fr 32px; }
+    .lb-row { grid-template-columns: 28px 1fr 60px 44px 42px 50px; }
+    .player-row { grid-template-columns: 1fr 1fr 52px 32px; }
   }
 `;
 
@@ -525,7 +530,7 @@ export default function GroupLeaderboard({
             const threshold = Math.max(2, Math.round(Math.min(ocrName.length, bestName.length) * 0.35));
             if (bestDist <= threshold) playerId = bestName;
           }
-          return { playerId, faction: factions[i] ?? "" };
+          return { playerId, faction: factions[i] ?? "", score: "" };
         })
       );
       setWinnerId(0);
@@ -575,7 +580,15 @@ export default function GroupLeaderboard({
       name: rowName(r),
       faction: r.faction,
       isWinner: coalition ? winnerIds.includes(i) : i === winnerId,
+      score: r.score?.trim() ? r.score.trim() : undefined,
     }));
+
+    // All-or-none: enforce client-side before hitting the API.
+    const scored = players.filter((p) => p.score !== undefined).length;
+    if (scored !== 0 && scored !== players.length) {
+      alert("Enter a score for every player, or leave them all blank.");
+      return;
+    }
 
     const res = await fetch(`/api/groups/${joinCode}/games`, {
       method: "POST",
@@ -612,14 +625,18 @@ export default function GroupLeaderboard({
     rosterElo[entry.player.name.toLowerCase()] = entry.groupElo;
   }
 
-  const playerStats: Record<string, { name: string; wins: number; games: number; factions: Set<string>; factionDetail: Record<string, { games: number; wins: number }> }> = {};
+  const playerStats: Record<string, { name: string; wins: number; games: number; scoreSum: number; scoredGames: number; factions: Set<string>; factionDetail: Record<string, { games: number; wins: number }> }> = {};
   for (const game of games) {
     for (const p of game.players) {
       const key = p.player.name.toLowerCase();
       if (!playerStats[key]) {
-        playerStats[key] = { name: p.player.name, wins: 0, games: 0, factions: new Set(), factionDetail: {} };
+        playerStats[key] = { name: p.player.name, wins: 0, games: 0, scoreSum: 0, scoredGames: 0, factions: new Set(), factionDetail: {} };
       }
       playerStats[key].games++;
+      if (p.score != null) {
+        playerStats[key].scoreSum += p.score;
+        playerStats[key].scoredGames++;
+      }
       if (p.faction) {
         playerStats[key].factions.add(p.faction);
         if (!playerStats[key].factionDetail[p.faction]) playerStats[key].factionDetail[p.faction] = { games: 0, wins: 0 };
@@ -630,7 +647,11 @@ export default function GroupLeaderboard({
     }
   }
   const leaderboard = Object.values(playerStats)
-    .map((p) => ({ ...p, groupElo: rosterElo[p.name.toLowerCase()] ?? 1000 }))
+    .map((p) => ({
+      ...p,
+      groupElo: rosterElo[p.name.toLowerCase()] ?? 1000,
+      avgScore: p.scoredGames > 0 ? p.scoreSum / p.scoredGames : null,
+    }))
     .sort((a, b) => b.groupElo - a.groupElo);
 
   // The lowest-ELO denizen — our (sarcastic) "Stupid Ass Nigga Award". Needs 2+ players to mean anything.
@@ -690,6 +711,7 @@ export default function GroupLeaderboard({
           <div className="hero-title">The Woodland Chronicles</div>
           <div className="hero-sub">{groupName}</div>
           <div className="join-code">Join code: <span>{joinCode}</span></div>
+          <Link className="hof-link" href={`/g/${joinCode}/hall-of-fame`}>🏛 Hall of Fame</Link>
         </div>
 
         <div className="container">
@@ -917,6 +939,16 @@ export default function GroupLeaderboard({
                       <div className="field">
                         <FactionSelect value={row.faction} onChange={(id) => updateGameRow(i, "faction", id)} />
                       </div>
+                      <div className="field score-field">
+                        <input
+                          type="number"
+                          min={0}
+                          inputMode="numeric"
+                          placeholder="VP"
+                          value={row.score}
+                          onChange={(e) => updateGameRow(i, "score", e.target.value)}
+                        />
+                      </div>
                       <button className="remove-player" onClick={() => removeGameRow(i)} disabled={gameRows.length <= 2}>−</button>
                     </div>
                   ))}
@@ -1010,6 +1042,7 @@ export default function GroupLeaderboard({
               <span>Denizen</span>
               <span style={{ textAlign: "center" }}>ELO</span>
               <span style={{ textAlign: "center" }}>Wins</span>
+              <span style={{ textAlign: "center" }}>Avg</span>
               <span style={{ textAlign: "center" }}>Games</span>
             </div>
             {leaderboard.length === 0 ? (
@@ -1036,6 +1069,9 @@ export default function GroupLeaderboard({
                     <div className="stat-elo-label">{p.games < PROVISIONAL_THRESHOLD ? "prov." : "pts"}</div>
                   </div>
                   <div className="stat"><span className="stat-wins">{p.wins}</span></div>
+                  <div className="stat">
+                    <span className="stat-avg">{p.avgScore != null ? p.avgScore.toFixed(1) : "–"}</span>
+                  </div>
                   <div className="stat">
                     <div className="stat-games">{p.games}</div>
                     <div className="stat-pct">{Math.round((p.wins / p.games) * 100)}%</div>
@@ -1064,7 +1100,7 @@ export default function GroupLeaderboard({
                                 {wf && <FactionIcon id={w.faction} size={72} />}
                                 <div className="winner-text">
                                   {idx === 0 && <span className="winner-label">{winners.length > 1 ? "Coalition" : "Victor"}</span>}
-                                  <span className="winner-name">{w.player.name}</span>
+                                  <span className="winner-name">{w.player.name}{w.score != null ? ` · ${w.score}` : ""}</span>
                                   <span className="winner-faction">{wf ? wf.name : w.faction}</span>
                                 </div>
                               </div>
@@ -1078,7 +1114,7 @@ export default function GroupLeaderboard({
                             return (
                               <span key={p.player.name} className="player-chip">
                                 {pf ? <FactionPortrait id={p.faction} size={26} radius={4} /> : null}
-                                <span className="player-chip-name">{p.player.name}</span>
+                                <span className="player-chip-name">{p.player.name}{p.score != null ? ` · ${p.score}` : ""}</span>
                               </span>
                             );
                           })}
