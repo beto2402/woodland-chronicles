@@ -34,11 +34,13 @@ export async function POST(req: Request) {
 
   const ext = file.name.split(".").pop()?.toLowerCase() || "img";
   try {
+    // Private store: blobs aren't publicly reachable. We store privately and serve
+    // them back through our own /api/blob proxy route (see GET there).
     const blob = await put(`hall-of-fame/${crypto.randomUUID()}.${ext}`, file, {
-      access: "public",
+      access: "private",
       contentType: file.type,
     });
-    return NextResponse.json({ url: blob.url }, { status: 201 });
+    return NextResponse.json({ url: `/api/blob/${blob.pathname}` }, { status: 201 });
   } catch (err) {
     console.error("Blob upload failed:", err);
     const message = err instanceof Error ? err.message : "Upload failed";

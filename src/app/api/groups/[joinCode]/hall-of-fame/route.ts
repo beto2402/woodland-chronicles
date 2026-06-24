@@ -56,7 +56,6 @@ export async function GET(_req: Request, { params }: Params) {
     second: { name: string; score: number };
   };
   let blowout: GapRecord | null = null; // biggest gap
-  let nailbiter: GapRecord | null = null; // smallest gap
   for (const g of scoredGames) {
     if (g.players.length < 2) continue;
     const ranked = [...g.players].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
@@ -71,8 +70,25 @@ export async function GET(_req: Request, { params }: Params) {
       second: { name: second.player.name, score: second.score ?? 0 },
     };
     if (!blowout || gap > blowout.gap) blowout = rec;
-    if (!nailbiter || gap < nailbiter.gap) nailbiter = rec;
   }
 
-  return NextResponse.json({ moments, lossesAt29, records: { blowout, nailbiter } });
+  // Biggest Crackhead — most games played (across all group games, scored or not).
+  const gamesPlayed = await prisma.gamePlayer.groupBy({
+    by: ["playerId"],
+    where: { game: { groupId: group.id } },
+    _count: { playerId: true },
+    orderBy: { _count: { playerId: "desc" } },
+    take: 1,
+  });
+  let crackhead: { id: string; name: string; count: number } | null = null;
+  if (gamesPlayed.length > 0) {
+    const top = gamesPlayed[0];
+    const player = await prisma.player.findUnique({
+      where: { id: top.playerId },
+      select: { id: true, name: true },
+    });
+    if (player) crackhead = { id: player.id, name: player.name, count: top._count.playerId };
+  }
+
+  return NextResponse.json({ moments, lossesAt29, records: { blowout, crackhead } });
 }

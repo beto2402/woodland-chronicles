@@ -141,13 +141,20 @@ Deletes a game.
 ## Hall of Fame
 
 ### `POST /api/upload`
-Uploads a single image to Vercel Blob and returns its public URL.
+Uploads a single image to Vercel Blob (**private** store) and returns a proxy URL.
 
 **Auth:** required (any signed-in user; moment-creation enforces group membership)  
 **Body:** `multipart/form-data` with a `file` field  
 **Validation:** type ∈ {jpeg, png, webp, gif}, size ≤ 5MB  
-**Response:** `{ "url": "https://…blob.vercel-storage.com/…" }`  
-**Env:** requires `BLOB_READ_WRITE_TOKEN` (provisioned by Vercel Blob)
+**Response:** `{ "url": "/api/blob/hall-of-fame/<uuid>.<ext>" }` — points at the proxy route below  
+**Env:** requires `BLOB_READ_WRITE_TOKEN` (provisioned by Vercel Blob). The store is private, so blobs are uploaded with `access: "private"` and never exposed via a direct Vercel URL.
+
+### `GET /api/blob/[...path]`
+Streams a privately-stored blob back to the browser, keeping the token server-side.
+
+**Auth:** none (reads are public, like the rest of a group's data)  
+**Behavior:** `get(pathname, { access: "private" })`, streams with the stored content-type and a long immutable `Cache-Control`. 404 if missing.  
+**Used by:** moment `<img>` tags, which set `src` to the `/api/blob/…` URL returned by `POST /api/upload`.
 
 ### `GET /api/groups/[joinCode]/hall-of-fame`
 Aggregated Hall of Fame data for a group.
@@ -160,12 +167,13 @@ Aggregated Hall of Fame data for a group.
   "lossesAt29": [ { "id": "playerId", "name": "PlayerName", "count": 3 } ],
   "records": {
     "blowout":   { "gameId", "date", "gap", "first": {"name","score"}, "second": {"name","score"} },
-    "nailbiter": { "gameId", "date", "gap", "first": {"name","score"}, "second": {"name","score"} }
+    "crackhead": { "id": "playerId", "name": "PlayerName", "count": 12 }
   }
 }
 ```
 - `lossesAt29` ("Womp Womp Hall"): games where a player had `score = 29` and `isWinner = false`, grouped by player, descending by count.
-- `records.blowout` / `records.nailbiter`: largest / smallest point gap between 1st and 2nd place, computed only over games where **every** player has a score. Both `null` until such a game exists.
+- `records.blowout`: largest point gap between 1st and 2nd place, over games where **every** player has a score. `null` until such a game exists.
+- `records.crackhead` ("Biggest Crackhead"): player with the most games played (any game, scored or not). `null` if no games.
 
 ### `POST /api/groups/[joinCode]/games/[id]/moments`
 Creates a Hall of Fame moment attached to a game.

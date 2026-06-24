@@ -25,10 +25,10 @@ Looks up the group by join code. Returns 404 if not found. Renders `<GroupLeader
 Looks up the group by join code. Returns 404 if not found. Renders `<HallOfFame>`.
 
 ### `src/app/g/[joinCode]/hall-of-fame/HallOfFame.tsx` — Hall of Fame (client component)
-Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me`. Sections:
-- **Womp Womp Hall** — per-player count of games lost with exactly 29 points (derived from scores); count shown below the name, sorted high→low.
-- **Records** — Blowout (biggest 1st/2nd gap) and Nail-biter (smallest gap), per game, derived from scores.
+Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me` in one batch on mount; shows a spinner until they resolve (the "+ Record a Moment" button only appears once `me`+`roster` load and confirm membership). Sections, in order:
 - **Moments** — cards (kind badge, title, game context, optional screenshot, description); creator can delete. Each moment has a `kind`: 🏅 Glory (smart play) or 🤡 Tard (dumb moment), chosen in the record form and shown as a colored left border + badge.
+- **Womp Womp Hall** — per-player count of games lost with exactly 29 points (derived from scores); count shown below the name, sorted high→low.
+- **Records** — Blowout (biggest 1st/2nd gap, derived from scores) and Biggest Crackhead (most games played).
 
 Members get a "+ Record a Moment" form: pick a game, title, description, optional image. The image is uploaded via `POST /api/upload` first, then its URL is saved with the moment. Reached via the "🏛 Hall of Fame" link on the group page hero.
 
