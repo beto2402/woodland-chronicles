@@ -24,6 +24,7 @@ export async function GET(_req: Request, { params }: Params) {
     include: {
       players: { include: { player: true } },
       loggedBy: { select: { id: true, name: true } },
+      moments: { orderBy: { createdAt: "desc" } },
     },
     orderBy: { date: "desc" },
   });
@@ -82,6 +83,26 @@ export async function POST(req: Request, { params }: Params) {
     }
   }
 
+  // Scores are all-or-none: either every player has one, or none do.
+  const scoredCount = players.filter(
+    (p: { score?: unknown }) => p.score !== undefined && p.score !== null && p.score !== "",
+  ).length;
+  if (scoredCount !== 0 && scoredCount !== players.length) {
+    return NextResponse.json(
+      { error: "Scores must be provided for every player or for none" },
+      { status: 400 },
+    );
+  }
+  const scoresProvided = scoredCount === players.length;
+  if (scoresProvided) {
+    for (const p of players) {
+      const n = Number(p.score);
+      if (!Number.isInteger(n) || n < 0) {
+        return NextResponse.json({ error: `Invalid score: ${p.score}` }, { status: 400 });
+      }
+    }
+  }
+
   const group = await prisma.group.findUnique({ where: { joinCode } });
   if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
 
@@ -119,10 +140,11 @@ export async function POST(req: Request, { params }: Params) {
       hasHirelings: hasHirelings ?? false,
       loggedByUserId: session.user.id,
       players: {
-        create: players.map((p: { name: string; faction: string; isWinner: boolean }) => ({
+        create: players.map((p: { name: string; faction: string; isWinner: boolean; score?: unknown }) => ({
           playerId: playerMap.get(p.name)!,
           faction: p.faction,
           isWinner: p.isWinner ?? false,
+          score: scoresProvided ? Number(p.score) : null,
         })),
       },
     },

@@ -61,6 +61,7 @@ Join table: Player ↔ Group. Composite PK `(groupId, playerId)`.
 | hasHirelings | Boolean | default false |
 | loggedByUserId | String? | FK → User (SetNull on delete) |
 | players | GamePlayer[] | |
+| moments | HallOfFameMoment[] | attached Hall of Fame moments |
 
 ### GamePlayer
 One row per player per game. `isWinner` replaces a separate winner table.
@@ -72,10 +73,26 @@ One row per player per game. `isWinner` replaces a separate winner table.
 | playerId | String | FK → Player |
 | faction | String | free-text faction name (see valid factions in games API) |
 | isWinner | Boolean | default false |
+| score | Int? | final VP; all-or-none per game (validated at app layer) |
+
+### HallOfFameMoment
+A notable, manually-recorded moment attached to a specific game. Deleted with its game (Cascade).
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String (cuid) | PK |
+| gameId | String | FK → Game (Cascade) |
+| title | String | required |
+| description | String (Text) | required |
+| kind | MomentKind enum | GLORY (smart play) \| TARD (dumb moment); default GLORY |
+| imageUrl | String? | Vercel Blob URL; optional |
+| createdByUserId | String? | FK → User (SetNull on delete) |
+| createdAt | DateTime | default now() |
 
 ## Enums
 - `Role`: `ADMIN`, `MEMBER`
 - `VictoryType`: `SCORE`, `DOMINATION`, `COALITION`
+- `MomentKind`: `GLORY` (smart/record-worthy play), `TARD` (inside-joke blunder — "this associate really dumb")
 
 ## Key constraints
 - Case-insensitive unique player names: custom SQL index in migration `20260610000008_case_insensitive_player_names`
