@@ -409,6 +409,7 @@ export default function GroupLeaderboard({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [scanError, setScanError] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [logging, setLogging] = useState(false);
   const [gamesPage, setGamesPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
   const [factionModal, setFactionModal] = useState<string | null>(null);
@@ -575,6 +576,7 @@ export default function GroupLeaderboard({
   function rowName(row: { playerId: string }) { return row.playerId || ""; }
 
   async function logGame() {
+    if (logging) return; // guard against double-submit
     const coalition = victoryType === "Coalition";
     const players = gameRows.map((r, i) => ({
       name: rowName(r),
@@ -590,19 +592,24 @@ export default function GroupLeaderboard({
       return;
     }
 
-    const res = await fetch(`/api/groups/${joinCode}/games`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: gameDate, victoryType, isVirtual, hasHirelings, players }),
-    });
+    setLogging(true);
+    try {
+      const res = await fetch(`/api/groups/${joinCode}/games`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: gameDate, victoryType, isVirtual, hasHirelings, players }),
+      });
 
-    if (res.ok) {
-      resetForm();
-      setShowForm(false);
-      await loadAll();
-    } else {
-      const data = await res.json();
-      alert(data.error ?? "Failed to save game.");
+      if (res.ok) {
+        resetForm();
+        setShowForm(false);
+        await loadAll();
+      } else {
+        const data = await res.json();
+        alert(data.error ?? "Failed to save game.");
+      }
+    } finally {
+      setLogging(false);
     }
   }
 
@@ -1028,7 +1035,9 @@ export default function GroupLeaderboard({
 
               <div className="form-actions">
                 <button className="btn-secondary" onClick={() => { resetForm(); setShowForm(false); }}>Cancel</button>
-                <button className="btn-primary" onClick={logGame} disabled={!formValid}>Record Battle</button>
+                <button className="btn-primary" onClick={logGame} disabled={!formValid || logging}>
+                  {logging ? "Recording…" : "Record Battle"}
+                </button>
               </div>
             </div>
           )}

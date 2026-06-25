@@ -23,7 +23,8 @@ type GapRecord = {
   first: { name: string; score: number };
   second: { name: string; score: number };
 } | null;
-type Records = { blowout: GapRecord; nailbiter: GapRecord };
+type TallyRecord = { id: string; name: string; count: number } | null;
+type Records = { blowout: GapRecord; crackhead: TallyRecord };
 type Me = { id: string; claimedPlayer: { id: string; name: string } | null };
 type GameLite = {
   id: string;
@@ -70,6 +71,9 @@ const styles = `
   .form-box input, .form-box textarea, .form-box select { width: 100%; background: #0e1a0e; border: 1px solid #2d3b2d; border-radius: 4px; color: #f2e8d0; padding: 8px 10px; font-family: inherit; font-size: 0.9rem; }
   .form-box textarea { min-height: 80px; resize: vertical; }
   .notice { color: #8b3a1a; font-size: 0.8rem; }
+  .hof-loader { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 48px 0; color: #5a6a4a; font-size: 0.85rem; }
+  .hof-spinner { width: 18px; height: 18px; border: 2px solid #2d3b2d; border-top-color: #c9922a; border-radius: 50%; animation: hof-spin 0.7s linear infinite; }
+  @keyframes hof-spin { to { transform: rotate(360deg); } }
 `;
 
 async function safeJson(res: Response): Promise<Record<string, unknown> | null> {
@@ -88,10 +92,11 @@ function gameLabel(g: { date: string; players: { isWinner: boolean; player: { na
 export default function HallOfFame({ joinCode, groupName }: { joinCode: string; groupName: string }) {
   const [moments, setMoments] = useState<Moment[]>([]);
   const [lossesAt29, setLossesAt29] = useState<Loss29[]>([]);
-  const [records, setRecords] = useState<Records>({ blowout: null, nailbiter: null });
+  const [records, setRecords] = useState<Records>({ blowout: null, crackhead: null });
   const [games, setGames] = useState<GameLite[]>([]);
   const [me, setMe] = useState<Me | null>(null);
   const [roster, setRoster] = useState<{ player: { claimedBy?: { id: string } | null } }[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [gameId, setGameId] = useState("");
@@ -103,22 +108,23 @@ export default function HallOfFame({ joinCode, groupName }: { joinCode: string; 
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [hofRes, gamesRes, rosterRes] = await Promise.all([
+    const [hofRes, gamesRes, rosterRes, meRes] = await Promise.all([
       fetch(`/api/groups/${joinCode}/hall-of-fame`),
       fetch(`/api/groups/${joinCode}/games`),
       fetch(`/api/groups/${joinCode}/roster`),
+      fetch("/api/me"),
     ]);
     const hof = await hofRes.json();
     setMoments(hof.moments ?? []);
     setLossesAt29(hof.lossesAt29 ?? []);
-    setRecords(hof.records ?? { blowout: null, nailbiter: null });
+    setRecords(hof.records ?? { blowout: null, crackhead: null });
     setGames(await gamesRes.json());
     setRoster(await rosterRes.json());
+    setMe(meRes.ok ? await meRes.json() : null);
   }, [joinCode]);
 
   useEffect(() => {
-    load();
-    fetch("/api/me").then((r) => (r.ok ? r.json() : null)).then(setMe);
+    load().finally(() => setLoading(false));
   }, [load]);
 
   const isMember = !!me && roster.some((r) => r.player.claimedBy?.id === me.id);
@@ -177,12 +183,16 @@ export default function HallOfFame({ joinCode, groupName }: { joinCode: string; 
       <style>{styles}</style>
       <div className="hof-top">
         <Link className="hof-back" href={`/g/${joinCode}`}>← {groupName}</Link>
-        {isMember && !showForm && (
+        {!loading && isMember && !showForm && (
           <button className="add-btn" onClick={() => setShowForm(true)}>+ Record a Moment</button>
         )}
       </div>
       <div className="hof-title">Hall of Fame</div>
       <div className="hof-sub">Legends, blunders & heartbreaks</div>
+
+      {loading && (
+        <div className="hof-loader"><span className="hof-spinner" /> Loading the chronicles…</div>
+      )}
 
       {showForm && isMember && (
         <div className="form-box">
@@ -224,67 +234,69 @@ export default function HallOfFame({ joinCode, groupName }: { joinCode: string; 
         </div>
       )}
 
-      <div className="hof-section-title">😩 Womp Womp Hall — losses at 29 points</div>
-      {lossesAt29.length === 0 ? (
-        <div className="empty">No 29-point womp womps recorded yet. Lucky them.</div>
-      ) : (
-        <div className="womp-grid">
-          {lossesAt29.map((l) => (
-            <div key={l.id} className="womp-cell">
-              <span className="womp-name">{l.name}</span>
-              <span className="womp-count">{l.count}</span>
-              <span className="womp-count-label">womp womps</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="hof-section-title">📊 Records</div>
-      {!records.blowout && !records.nailbiter ? (
-        <div className="empty">No scored games yet — records appear once you log scores.</div>
-      ) : (
+      {!loading && (
         <>
-          {records.blowout && (
-            <div className="record-row">
-              <span className="record-name">Blowout</span>
-              <span className="record-val">
-                <b>{records.blowout.first.name}</b> beat {records.blowout.second.name} by{" "}
-                <b>{records.blowout.gap}</b> ({records.blowout.first.score}–{records.blowout.second.score})
-              </span>
-              <span className="record-meta">{records.blowout.date.slice(0, 10)}</span>
+          <div className="hof-section-title">🏆 Moments</div>
+          {moments.length === 0 ? (
+            <div className="empty">No moments yet. Go record one.</div>
+          ) : (
+            moments.map((m) => (
+              <div key={m.id} className={`moment-card ${m.kind === "TARD" ? "moment-tard" : "moment-glory"}`}>
+                <span className={`moment-badge ${m.kind === "TARD" ? "badge-tard" : "badge-glory"}`}>
+                  {m.kind === "TARD" ? "🤡 Tard" : "🏅 Glory"}
+                </span>
+                <div className="moment-title">{m.title}</div>
+                <div className="moment-meta">{gameLabel(m.game)}</div>
+                {m.imageUrl && <img src={m.imageUrl} alt={m.title} />}
+                <div className="moment-desc">{m.description}</div>
+                {me && m.createdByUserId === me.id && (
+                  <button className="moment-del" onClick={() => del(m)}>Delete</button>
+                )}
+              </div>
+            ))
+          )}
+
+          <div className="hof-section-title">😩 Womp Womp Hall — losses at 29 points</div>
+          {lossesAt29.length === 0 ? (
+            <div className="empty">No 29-point womp womps recorded yet. Lucky them.</div>
+          ) : (
+            <div className="womp-grid">
+              {lossesAt29.map((l) => (
+                <div key={l.id} className="womp-cell">
+                  <span className="womp-name">{l.name}</span>
+                  <span className="womp-count">{l.count}</span>
+                  <span className="womp-count-label">womp womps</span>
+                </div>
+              ))}
             </div>
           )}
-          {records.nailbiter && (
-            <div className="record-row">
-              <span className="record-name">Nail-biter</span>
-              <span className="record-val">
-                <b>{records.nailbiter.first.name}</b> edged {records.nailbiter.second.name} by{" "}
-                <b>{records.nailbiter.gap}</b> ({records.nailbiter.first.score}–{records.nailbiter.second.score})
-              </span>
-              <span className="record-meta">{records.nailbiter.date.slice(0, 10)}</span>
-            </div>
+
+          <div className="hof-section-title">📊 Records</div>
+          {!records.blowout && !records.crackhead ? (
+            <div className="empty">No records yet — log some games to fill these in.</div>
+          ) : (
+            <>
+              {records.blowout && (
+                <div className="record-row">
+                  <span className="record-name">Blowout</span>
+                  <span className="record-val">
+                    <b>{records.blowout.first.name}</b> beat {records.blowout.second.name} by{" "}
+                    <b>{records.blowout.gap}</b> ({records.blowout.first.score}–{records.blowout.second.score})
+                  </span>
+                  <span className="record-meta">{records.blowout.date.slice(0, 10)}</span>
+                </div>
+              )}
+              {records.crackhead && (
+                <div className="record-row">
+                  <span className="record-name">Biggest Crackhead</span>
+                  <span className="record-val">
+                    <b>{records.crackhead.name}</b> has played <b>{records.crackhead.count}</b> games
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </>
-      )}
-
-      <div className="hof-section-title">🏆 Moments</div>
-      {moments.length === 0 ? (
-        <div className="empty">No moments yet. Go record one.</div>
-      ) : (
-        moments.map((m) => (
-          <div key={m.id} className={`moment-card ${m.kind === "TARD" ? "moment-tard" : "moment-glory"}`}>
-            <span className={`moment-badge ${m.kind === "TARD" ? "badge-tard" : "badge-glory"}`}>
-              {m.kind === "TARD" ? "🤡 Tard" : "🏅 Glory"}
-            </span>
-            <div className="moment-title">{m.title}</div>
-            <div className="moment-meta">{gameLabel(m.game)}</div>
-            {m.imageUrl && <img src={m.imageUrl} alt={m.title} />}
-            <div className="moment-desc">{m.description}</div>
-            {me && m.createdByUserId === me.id && (
-              <button className="moment-del" onClick={() => del(m)}>Delete</button>
-            )}
-          </div>
-        ))
       )}
     </div>
   );
