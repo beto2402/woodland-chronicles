@@ -44,6 +44,7 @@ const styles = `
   .result-toggle { text-align: center; margin-top: 10px; }
   .result-form { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   .error { font-size: 0.72rem; color: #f2a866; margin-top: 6px; text-align: center; }
+  .hint { font-size: 0.66rem; color: #6a7a5a; margin-top: 4px; text-align: center; font-style: italic; }
   .empty { text-align: center; color: #5a6a4a; padding: 40px 0; }
 `;
 
@@ -84,7 +85,7 @@ type Match = {
   penaltyHomeScore: number | null;
   penaltyAwayScore: number | null;
   winnerTeam: string | null;
-  locked: boolean;
+  ended: boolean;
   myPick: PickShape | null;
   allPicks: (PickShape & { userName: string | null })[];
 };
@@ -130,6 +131,7 @@ export default function QuinielasPage() {
   const { data: session, status } = useSession();
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [stage, setStage] = useState<(typeof STAGES)[number]["key"]>("ROUND_OF_32");
+  const [statusFilter, setStatusFilter] = useState<"open" | "past">("open");
   const [groupFilter, setGroupFilter] = useState("");
   const [search, setSearch] = useState("");
   const [pickDrafts, setPickDrafts] = useState<Record<string, Draft>>({});
@@ -148,16 +150,24 @@ export default function QuinielasPage() {
         for (const m of data) drafts[m.id] = draftFromPick(m.myPick);
         setPickDrafts(drafts);
 
-        // Default tab: first stage (in bracket order) that still has an unlocked match.
+        // Default tab: first stage (in bracket order) that still has a missing (not-yet-ended) match.
         for (const s of STAGES) {
-          if (data.some((m) => m.stage === s.key && !m.locked)) {
+          if (data.some((m) => m.stage === s.key && !m.ended)) {
             setStage(s.key);
+            setStatusFilter("open");
             return;
           }
         }
+        // Nothing missing anywhere — everything's been played, default to browsing past games.
         setStage("FINAL");
+        setStatusFilter("past");
       });
   }, [status]);
+
+  function selectStage(s: (typeof STAGES)[number]["key"]) {
+    setStage(s);
+    setStatusFilter(matches && matches.some((m) => m.stage === s && !m.ended) ? "open" : "past");
+  }
 
   const groupNames = useMemo(() => {
     if (!matches) return [];
@@ -168,6 +178,7 @@ export default function QuinielasPage() {
     if (!matches) return [];
     return matches
       .filter((m) => m.stage === stage)
+      .filter((m) => (statusFilter === "past" ? m.ended : !m.ended))
       .filter((m) => (stage === "GROUP" && groupFilter ? m.groupName === groupFilter : true))
       .filter((m) => {
         if (!search.trim()) return true;
@@ -178,7 +189,7 @@ export default function QuinielasPage() {
         );
       })
       .sort((a, b) => a.kickoffAt.localeCompare(b.kickoffAt));
-  }, [matches, stage, groupFilter, search]);
+  }, [matches, stage, statusFilter, groupFilter, search]);
 
   function updatePickDraft(id: string, patch: Partial<Draft>) {
     setPickDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
@@ -195,13 +206,16 @@ export default function QuinielasPage() {
       return "Enter both scores";
     }
     if (stageKey === "GROUP") return null;
-    if (h !== a) return null;
-    if (d.decidedBy !== "PENALTIES") return "Knockout ties need a penalty shootout — set Decided by: Penalties";
-    const ph = Number(d.penaltyHomeScore);
-    const pa = Number(d.penaltyAwayScore);
-    if (d.penaltyHomeScore === "" || d.penaltyAwayScore === "" || !Number.isInteger(ph) || !Number.isInteger(pa) || ph === pa) {
-      return "Enter a decisive penalty shootout score";
+    if (d.decidedBy === "PENALTIES") {
+      if (h !== a) return "Penalties only applies when the score is level after extra time";
+      const ph = Number(d.penaltyHomeScore);
+      const pa = Number(d.penaltyAwayScore);
+      if (d.penaltyHomeScore === "" || d.penaltyAwayScore === "" || !Number.isInteger(ph) || !Number.isInteger(pa) || ph === pa) {
+        return "Enter a decisive penalty shootout score";
+      }
+      return null;
     }
+    if (h === a) return "Knockout ties need a penalty shootout — set Decided by: Penalties";
     return null;
   }
 
@@ -300,13 +314,15 @@ export default function QuinielasPage() {
 
           <div className="tabs">
             {STAGES.map((s) => (
-              <button key={s.key} className={`tab ${stage === s.key ? "active" : ""}`} onClick={() => setStage(s.key)}>
+              <button key={s.key} className={`tab ${stage === s.key ? "active" : ""}`} onClick={() => selectStage(s.key)}>
                 {s.label}
               </button>
             ))}
           </div>
 
           <div className="controls-row">
+            <button className={`tab ${statusFilter === "open" ? "active" : ""}`} onClick={() => setStatusFilter("open")}>Open</button>
+            <button className={`tab ${statusFilter === "past" ? "active" : ""}`} onClick={() => setStatusFilter("past")}>Past</button>
             {stage === "GROUP" && (
               <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}>
                 <option value="">All groups</option>
@@ -338,8 +354,6 @@ export default function QuinielasPage() {
                   }
                 : null
             );
-            const needsPenaltyPick = m.stage !== "GROUP" && draft.homeScore !== "" && draft.awayScore !== "" && draft.homeScore === draft.awayScore;
-            const needsPenaltyResult = m.stage !== "GROUP" && rDraft.homeScore !== "" && rDraft.awayScore !== "" && rDraft.homeScore === rDraft.awayScore;
             const canEnterResult = !!m.homeTeam && !!m.awayTeam;
 
             return (
@@ -366,7 +380,7 @@ export default function QuinielasPage() {
                   <span className={`team ${m.awayTeam ? "" : "placeholder"}`}>{teamLabel(m.awayTeam, m.awayTeamPlaceholder)}</span>
                 </div>
 
-                {!m.locked && (
+                {!m.ended && (
                   <>
                     <div className="pick-row">
                       <input
@@ -389,22 +403,26 @@ export default function QuinielasPage() {
                           <option value="PENALTIES">Penalties</option>
                         </select>
                       )}
-                      {needsPenaltyPick && draft.decidedBy === "PENALTIES" && (
+                      {draft.decidedBy === "PENALTIES" && (
                         <>
-                          <input type="number" min={0} placeholder="P" value={draft.penaltyHomeScore} onChange={(e) => updatePickDraft(m.id, { penaltyHomeScore: e.target.value })} />
+                          <span className="vs">Pens</span>
+                          <input type="number" min={0} value={draft.penaltyHomeScore} onChange={(e) => updatePickDraft(m.id, { penaltyHomeScore: e.target.value })} />
                           <span className="vs">–</span>
-                          <input type="number" min={0} placeholder="P" value={draft.penaltyAwayScore} onChange={(e) => updatePickDraft(m.id, { penaltyAwayScore: e.target.value })} />
+                          <input type="number" min={0} value={draft.penaltyAwayScore} onChange={(e) => updatePickDraft(m.id, { penaltyAwayScore: e.target.value })} />
                         </>
                       )}
                       <button className="btn-save" disabled={saving[`pick-${m.id}`]} onClick={() => savePick(m)}>
                         {m.myPick ? "Update" : "Save"}
                       </button>
                     </div>
+                    {draft.decidedBy === "PENALTIES" && (
+                      <div className="hint">Score = result after extra time (must be level) · Pens = shootout score</div>
+                    )}
                     {errors[`pick-${m.id}`] && <div className="error">{errors[`pick-${m.id}`]}</div>}
                   </>
                 )}
 
-                {m.locked && (
+                {m.ended && (
                   <>
                     {m.myPick ? (
                       <div className="my-pick">
@@ -412,7 +430,7 @@ export default function QuinielasPage() {
                         {m.myPick.decidedBy === "PENALTIES" ? ` (pens ${m.myPick.penaltyHomeScore}-${m.myPick.penaltyAwayScore})` : m.myPick.decidedBy === "EXTRA_TIME" ? " (AET)" : ""}
                       </div>
                     ) : (
-                      <div className="locked-note">Picks locked — you didn&apos;t make one in time.</div>
+                      <div className="locked-note">You didn&apos;t make a pick before the result came in.</div>
                     )}
 
                     {m.allPicks.length > 0 && (
@@ -429,42 +447,46 @@ export default function QuinielasPage() {
                         })}
                       </div>
                     )}
+                  </>
+                )}
 
-                    {canEnterResult && (
-                      <div className="result-toggle">
-                        <button className="btn-toggle" onClick={() => setResultOpen((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}>
-                          {m.homeScore != null ? "Edit result" : "Enter result"}
-                        </button>
-                      </div>
-                    )}
+                {canEnterResult && (
+                  <div className="result-toggle">
+                    <button className="btn-toggle" onClick={() => setResultOpen((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}>
+                      {m.ended ? "Edit result" : "Enter result"}
+                    </button>
+                  </div>
+                )}
 
-                    {resultOpen[m.id] && (
-                      <>
-                        <div className="result-form">
-                          <input type="number" min={0} value={rDraft.homeScore} onChange={(e) => updateResultDraft(m.id, { homeScore: e.target.value })} />
+                {resultOpen[m.id] && (
+                  <>
+                    <div className="result-form">
+                      <input type="number" min={0} value={rDraft.homeScore} onChange={(e) => updateResultDraft(m.id, { homeScore: e.target.value })} />
+                      <span className="vs">–</span>
+                      <input type="number" min={0} value={rDraft.awayScore} onChange={(e) => updateResultDraft(m.id, { awayScore: e.target.value })} />
+                      {m.stage !== "GROUP" && (
+                        <select value={rDraft.decidedBy} onChange={(e) => updateResultDraft(m.id, { decidedBy: e.target.value as DecidedBy })}>
+                          <option value="REGULATION">Regulation</option>
+                          <option value="EXTRA_TIME">Extra time</option>
+                          <option value="PENALTIES">Penalties</option>
+                        </select>
+                      )}
+                      {rDraft.decidedBy === "PENALTIES" && (
+                        <>
+                          <span className="vs">Pens</span>
+                          <input type="number" min={0} value={rDraft.penaltyHomeScore} onChange={(e) => updateResultDraft(m.id, { penaltyHomeScore: e.target.value })} />
                           <span className="vs">–</span>
-                          <input type="number" min={0} value={rDraft.awayScore} onChange={(e) => updateResultDraft(m.id, { awayScore: e.target.value })} />
-                          {m.stage !== "GROUP" && (
-                            <select value={rDraft.decidedBy} onChange={(e) => updateResultDraft(m.id, { decidedBy: e.target.value as DecidedBy })}>
-                              <option value="REGULATION">Regulation</option>
-                              <option value="EXTRA_TIME">Extra time</option>
-                              <option value="PENALTIES">Penalties</option>
-                            </select>
-                          )}
-                          {needsPenaltyResult && rDraft.decidedBy === "PENALTIES" && (
-                            <>
-                              <input type="number" min={0} placeholder="P" value={rDraft.penaltyHomeScore} onChange={(e) => updateResultDraft(m.id, { penaltyHomeScore: e.target.value })} />
-                              <span className="vs">–</span>
-                              <input type="number" min={0} placeholder="P" value={rDraft.penaltyAwayScore} onChange={(e) => updateResultDraft(m.id, { penaltyAwayScore: e.target.value })} />
-                            </>
-                          )}
-                          <button className="btn-save" disabled={saving[`result-${m.id}`]} onClick={() => saveResult(m)}>
-                            Save result
-                          </button>
-                        </div>
-                        {errors[`result-${m.id}`] && <div className="error">{errors[`result-${m.id}`]}</div>}
-                      </>
+                          <input type="number" min={0} value={rDraft.penaltyAwayScore} onChange={(e) => updateResultDraft(m.id, { penaltyAwayScore: e.target.value })} />
+                        </>
+                      )}
+                      <button className="btn-save" disabled={saving[`result-${m.id}`]} onClick={() => saveResult(m)}>
+                        Save result
+                      </button>
+                    </div>
+                    {rDraft.decidedBy === "PENALTIES" && (
+                      <div className="hint">Score = result after extra time (must be level) · Pens = shootout score</div>
                     )}
+                    {errors[`result-${m.id}`] && <div className="error">{errors[`result-${m.id}`]}</div>}
                   </>
                 )}
               </div>

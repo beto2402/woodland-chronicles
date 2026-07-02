@@ -17,10 +17,8 @@ export async function GET() {
     },
   });
 
-  const now = new Date();
-
   const result = matches.map((m) => {
-    const locked = m.kickoffAt <= now;
+    const ended = m.homeScore != null; // result recorded — not just kickoff having passed
     const myPick = m.picks.find((p) => p.userId === session.user.id) ?? null;
     return {
       id: m.id,
@@ -39,7 +37,7 @@ export async function GET() {
       penaltyHomeScore: m.penaltyHomeScore,
       penaltyAwayScore: m.penaltyAwayScore,
       winnerTeam: m.winnerTeam,
-      locked,
+      ended,
       myPick: myPick
         ? {
             homeScore: myPick.homeScore,
@@ -49,8 +47,9 @@ export async function GET() {
             penaltyAwayScore: myPick.penaltyAwayScore,
           }
         : null,
-      // Other players' picks are only visible once picks are locked (kickoff has passed).
-      allPicks: locked
+      // Other players' picks are only visible once the match has ended, so no one can
+      // adjust their own pick after seeing someone else's mid-match.
+      allPicks: ended
         ? m.picks.map((p) => ({
             userName: p.user.name,
             homeScore: p.homeScore,

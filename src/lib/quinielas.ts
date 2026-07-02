@@ -20,6 +20,10 @@ export function validateResult(stage: MatchStage, input: ResultInput): string | 
     return null; // draws allowed, no penalties possible
   }
 
+  if (decidedBy === DecidedBy.PENALTIES && homeScore !== awayScore) {
+    return "Penalties only applies when the score is level after extra time";
+  }
+
   if (homeScore !== awayScore) {
     return null; // decisive in regulation or extra time
   }

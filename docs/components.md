@@ -32,13 +32,14 @@ Hidden World Cup 2026 prediction pool. **Not linked from anywhere in the app nav
 **Behavior:**
 - Not signed in: sign-in card only
 - Signed in: fetches `GET /api/quinielas/matches` and renders all 104 matches
-- Stage tabs (Group Stage / Round of 32 / Round of 16 / Quarterfinal / Semifinal / Third Place / Final); defaults to the first stage (in bracket order) that still has an unplayed match. Group Stage tab adds a group-letter (A–L) filter; a team-name text filter applies across all tabs.
+- Stage tabs (Group Stage / Round of 32 / Round of 16 / Quarterfinal / Semifinal / Third Place / Final); defaults to the first stage (in bracket order) that still has a match without a result (`!ended`) — if every stage is fully resolved, falls back to the Final tab. Group Stage tab adds a group-letter (A–L) filter; a team-name text filter applies across all tabs.
+- **Open / Past filter:** a second toggle next to the stage tabs shows either matches still missing a result (Open) or matches that have ended (Past). Switching stage tabs re-picks the default (Open if that stage has any unresolved match, otherwise Past) via `selectStage`.
 - Each match card shows the two teams (or a placeholder like "Winner Match 83" if not yet determined), kickoff time formatted in `America/Mexico_City` ("hora CDMX"), and venue.
-- **Before kickoff:** score inputs + a "Decided by" selector (knockout stages only) to save/update your own pick. Ties are rejected for knockout matches unless "Penalties" is selected with a decisive shootout score.
-- **After kickoff (`locked`):** shows your own pick (read-only), then — once locked — everyone else's picks too (hidden before kickoff so no one can copy). Picks that exactly match the final score are highlighted.
-- **Entering a result:** once teams are determined, an "Enter/Edit result" toggle reveals the same score + decided-by inputs, posting to the result endpoint. Saving refetches all matches, since the bracket-advancement side effect can change other cards (a placeholder resolving into a real team name).
+- **While a match hasn't ended (`!ended`):** score inputs + a "Decided by" selector (knockout stages only) to save/update your own pick. This is **not** tied to kickoff time — a match that's kicked off but has no result yet stays pickable. Ties are rejected for knockout matches unless "Decided by: Penalties" is selected with a decisive shootout score; selecting Penalties reveals a second score pair for the shootout plus a hint clarifying the main score is the (level) result after extra time.
+- **Once a match has ended:** shows your own pick (read-only), then everyone else's picks too (hidden before the match ends so no one can copy). Picks that exactly match the final score are highlighted.
+- **Entering a result:** once teams are determined (regardless of whether the match has "ended" yet), an "Enter/Edit result" toggle reveals the same score + decided-by inputs, posting to the result endpoint. Saving refetches all matches, since the bracket-advancement side effect can change other cards (a placeholder resolving into a real team name).
 
-**Key types:** `Match`, `Draft` (local per-match input state for both the pick form and the result form, keyed by match id).
+**Key types:** `Match` (note: `ended` reflects whether a result is recorded, not kickoff time), `Draft` (local per-match input state for both the pick form and the result form, keyed by match id).
 
 ---
 

@@ -202,9 +202,9 @@ Returns all 104 matches, ordered by `matchNumber`.
 **Response:** `Match[]`, each with:
 - Schedule/team fields (`homeTeam`/`homeTeamPlaceholder`, `awayTeam`/`awayTeamPlaceholder`, `kickoffAt`, `venue`, `stage`, `groupName`)
 - Actual result fields (`homeScore`, `awayScore`, `decidedBy`, `penaltyHomeScore`, `penaltyAwayScore`, `winnerTeam`) — null until entered
-- `locked`: `true` once `kickoffAt` has passed
+- `ended`: `true` once a result has been recorded (`homeScore != null`) — **not** based on `kickoffAt`, so a match that's kicked off but has no result yet (e.g. still being played, or the result just hasn't been entered) stays pickable
 - `myPick`: the caller's own prediction for that match, or `null`
-- `allPicks`: every user's prediction — **empty until `locked` is `true`**, so picks stay hidden from other players until kickoff
+- `allPicks`: every user's prediction — **empty until `ended` is `true`**, so picks stay hidden from other players until the match is over
 
 ### `POST /api/quinielas/matches/[id]/pick`
 Upserts the caller's prediction for a match.
@@ -212,9 +212,9 @@ Upserts the caller's prediction for a match.
 **Auth:** required  
 **Body:** `{ homeScore, awayScore, decidedBy?: "REGULATION" | "EXTRA_TIME" | "PENALTIES", penaltyHomeScore?, penaltyAwayScore? }`  
 **Rules:**
-- 403 if `kickoffAt` has already passed (picks lock at kickoff)
+- 403 once the match has a recorded result (`homeScore != null`) — picks lock on result entry, not at kickoff
 - Group-stage matches may end level (draws allowed)
-- Knockout matches (anything but `GROUP`) can't be picked as level unless `decidedBy: "PENALTIES"` with a decisive (non-equal) penalty score
+- Knockout matches (anything but `GROUP`) can't be picked as level unless `decidedBy: "PENALTIES"` with a decisive (non-equal) penalty score; conversely `decidedBy: "PENALTIES"` is rejected if the score isn't level
 - One pick per user per match (`@@unique([matchId, userId])`); re-posting updates it
 
 ### `POST /api/quinielas/matches/[id]/result`

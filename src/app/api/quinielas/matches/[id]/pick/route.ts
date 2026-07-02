@@ -16,8 +16,8 @@ export async function POST(req: Request, { params }: Params) {
   const match = await prisma.match.findUnique({ where: { id } });
   if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 });
 
-  if (match.kickoffAt <= new Date()) {
-    return NextResponse.json({ error: "Picks lock at kickoff" }, { status: 403 });
+  if (match.homeScore != null) {
+    return NextResponse.json({ error: "Picks lock once the result is in" }, { status: 403 });
   }
 
   const body = await req.json();
