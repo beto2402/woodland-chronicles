@@ -191,6 +191,44 @@ Deletes a moment.
 
 ---
 
+## Quinielas
+
+Global World Cup 2026 prediction pool, hidden behind `/quinielas` (not linked from the main app nav — see `docs/components.md`). All routes require auth; there's no group-membership or admin concept here, any signed-in user can act.
+
+### `GET /api/quinielas/matches`
+Returns all 104 matches, ordered by `matchNumber`.
+
+**Auth:** required  
+**Response:** `Match[]`, each with:
+- Schedule/team fields (`homeTeam`/`homeTeamPlaceholder`, `awayTeam`/`awayTeamPlaceholder`, `kickoffAt`, `venue`, `stage`, `groupName`)
+- Actual result fields (`homeScore`, `awayScore`, `decidedBy`, `penaltyHomeScore`, `penaltyAwayScore`, `winnerTeam`) — null until entered
+- `locked`: `true` once `kickoffAt` has passed
+- `myPick`: the caller's own prediction for that match, or `null`
+- `allPicks`: every user's prediction — **empty until `locked` is `true`**, so picks stay hidden from other players until kickoff
+
+### `POST /api/quinielas/matches/[id]/pick`
+Upserts the caller's prediction for a match.
+
+**Auth:** required  
+**Body:** `{ homeScore, awayScore, decidedBy?: "REGULATION" | "EXTRA_TIME" | "PENALTIES", penaltyHomeScore?, penaltyAwayScore? }`  
+**Rules:**
+- 403 if `kickoffAt` has already passed (picks lock at kickoff)
+- Group-stage matches may end level (draws allowed)
+- Knockout matches (anything but `GROUP`) can't be picked as level unless `decidedBy: "PENALTIES"` with a decisive (non-equal) penalty score
+- One pick per user per match (`@@unique([matchId, userId])`); re-posting updates it
+
+### `POST /api/quinielas/matches/[id]/result`
+Records the actual result of a match and advances the bracket.
+
+**Auth:** required (any signed-in user — this is a small trusted-friend-group feature, not gated further)  
+**Body:** same shape as the pick body  
+**Rules:**
+- Both `homeTeam` and `awayTeam` must already be concrete (not placeholders)
+- Same draw/penalty rules as picks
+**Side effect:** if the match feeds a later one (`nextMatchId`/`nextMatchSlot`), the winner's name replaces the placeholder in that match's slot. Semifinals also push the *loser* into the third-place match via `loserNextMatchId`/`loserNextMatchSlot`. Logic lives in `src/lib/quinielas.ts` (`applyMatchResult`, `computeWinner`, `validateResult`).
+
+---
+
 ## ELO Ratings
 
 ELO is maintained automatically on `POST /games` and `DELETE /games/:id`. Both routes call:

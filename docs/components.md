@@ -24,6 +24,24 @@ Looks up the group by join code. Returns 404 if not found. Renders `<GroupLeader
 ### `src/app/g/[joinCode]/hall-of-fame/page.tsx` — Hall of Fame page (server component)
 Looks up the group by join code. Returns 404 if not found. Renders `<HallOfFame>`.
 
+---
+
+### `src/app/quinielas/page.tsx` — Quinielas page (client component)
+Hidden World Cup 2026 prediction pool. **Not linked from anywhere in the app nav** — reachable only by knowing the `/quinielas` URL directly. Global (not per-group); requires Google sign-in like the rest of the app, but has no group-membership concept — any signed-in user can pick and can enter match results.
+
+**Behavior:**
+- Not signed in: sign-in card only
+- Signed in: fetches `GET /api/quinielas/matches` and renders all 104 matches
+- Stage tabs (Group Stage / Round of 32 / Round of 16 / Quarterfinal / Semifinal / Third Place / Final); defaults to the first stage (in bracket order) that still has an unplayed match. Group Stage tab adds a group-letter (A–L) filter; a team-name text filter applies across all tabs.
+- Each match card shows the two teams (or a placeholder like "Winner Match 83" if not yet determined), kickoff time formatted in `America/Mexico_City` ("hora CDMX"), and venue.
+- **Before kickoff:** score inputs + a "Decided by" selector (knockout stages only) to save/update your own pick. Ties are rejected for knockout matches unless "Penalties" is selected with a decisive shootout score.
+- **After kickoff (`locked`):** shows your own pick (read-only), then — once locked — everyone else's picks too (hidden before kickoff so no one can copy). Picks that exactly match the final score are highlighted.
+- **Entering a result:** once teams are determined, an "Enter/Edit result" toggle reveals the same score + decided-by inputs, posting to the result endpoint. Saving refetches all matches, since the bracket-advancement side effect can change other cards (a placeholder resolving into a real team name).
+
+**Key types:** `Match`, `Draft` (local per-match input state for both the pick form and the result form, keyed by match id).
+
+---
+
 ### `src/app/g/[joinCode]/hall-of-fame/HallOfFame.tsx` — Hall of Fame (client component)
 Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me` in one batch on mount; shows a spinner until they resolve (the "+ Record a Moment" button only appears once `me`+`roster` load and confirm membership). Sections, in order:
 - **Moments** — cards (kind badge, title, game context, optional screenshot, description); creator can delete. Each moment has a `kind`: 🏅 Glory (smart play) or 🤡 Tard (dumb moment), chosen in the record form and shown as a colored left border + badge.
@@ -167,6 +185,7 @@ Combobox faction picker. Props: `{ value: string, onChange: (id: string) => void
 | `src/lib/nanoid.ts` | 8-char alphanumeric join code generator using `crypto.getRandomValues` |
 | `src/lib/elo.ts` | Pure ELO math + DB recalculation. Exports: `computeEloDeltas`, `replayGames`, `recalculateGroupElo`, `recalculateGlobalElo`. No React dependency. |
 | `src/lib/screenshot-scan.ts` | OCR pipeline for Root end-game screenshots. Exports `analyzeScreenshot(file)` → `{ names, factions }` and `levenshtein(a, b)`. Uses Tesseract.js v7 (lazy-loaded). No React dependency. |
+| `src/lib/quinielas.ts` | Quinielas result logic. Exports `validateResult(stage, input)` (draw/penalty rules), `computeWinner(stage, homeTeam, awayTeam, input)`, and `applyMatchResult(matchId, input)` — writes the result and cascades the winner (and semifinal losers) into the next match's team slot(s). No React dependency. |
 
 ## Types
 
