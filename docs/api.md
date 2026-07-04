@@ -191,41 +191,11 @@ Deletes a moment.
 
 ---
 
-## Quinielas
+## Quinielas (not part of this app)
 
-Global World Cup 2026 prediction pool, hidden behind `/quinielas` (not linked from the main app nav — see `docs/components.md`). All routes require auth; there's no group-membership or admin concept here, any signed-in user can act.
-
-### `GET /api/quinielas/matches`
-Returns all 104 matches, ordered by `matchNumber`.
-
-**Auth:** required  
-**Response:** `Match[]`, each with:
-- Schedule/team fields (`homeTeam`/`homeTeamPlaceholder`, `awayTeam`/`awayTeamPlaceholder`, `kickoffAt`, `venue`, `stage`, `groupName`)
-- Actual result fields (`homeScore`, `awayScore`, `decidedBy`, `penaltyHomeScore`, `penaltyAwayScore`, `winnerTeam`) — null until entered
-- `ended`: `true` once a result has been recorded (`homeScore != null`) — **not** based on `kickoffAt`, so a match that's kicked off but has no result yet (e.g. still being played, or the result just hasn't been entered) stays pickable
-- `myPick`: the caller's own prediction for that match, or `null`
-- `allPicks`: every user's prediction — **empty until `ended` is `true`**, so picks stay hidden from other players until the match is over
-
-### `POST /api/quinielas/matches/[id]/pick`
-Upserts the caller's prediction for a match.
-
-**Auth:** required  
-**Body:** `{ homeScore, awayScore, decidedBy?: "REGULATION" | "EXTRA_TIME" | "PENALTIES", penaltyHomeScore?, penaltyAwayScore? }`  
-**Rules:**
-- 403 once the match has a recorded result (`homeScore != null`) — picks lock on result entry, not at kickoff
-- Group-stage matches may end level (draws allowed)
-- Knockout matches (anything but `GROUP`) can't be picked as level unless `decidedBy: "PENALTIES"` with a decisive (non-equal) penalty score; conversely `decidedBy: "PENALTIES"` is rejected if the score isn't level
-- One pick per user per match (`@@unique([matchId, userId])`); re-posting updates it
-
-### `POST /api/quinielas/matches/[id]/result`
-Records the actual result of a match and advances the bracket.
-
-**Auth:** required (any signed-in user — this is a small trusted-friend-group feature, not gated further)  
-**Body:** same shape as the pick body  
-**Rules:**
-- Both `homeTeam` and `awayTeam` must already be concrete (not placeholders)
-- Same draw/penalty rules as picks
-**Side effect:** if the match feeds a later one (`nextMatchId`/`nextMatchSlot`), the winner's name replaces the placeholder in that match's slot. Semifinals also push the *loser* into the third-place match via `loserNextMatchId`/`loserNextMatchSlot`. Logic lives in `src/lib/quinielas.ts` (`applyMatchResult`, `computeWinner`, `validateResult`).
+`/api/quinielas/*` is a separate, hidden World Cup prediction pool that happens to live in the
+same codebase and database — it isn't part of the Woodland Chronicles / Root app. Documented on
+its own in **`docs/quinielas.md`**.
 
 ---
 

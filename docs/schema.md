@@ -89,49 +89,17 @@ A notable, manually-recorded moment attached to a specific game. Deleted with it
 | createdByUserId | String? | FK → User (SetNull on delete) |
 | createdAt | DateTime | default now() |
 
-### Match
-Global World Cup 2026 fixture — not tied to a Group. Powers the hidden `/quinielas` feature (see `docs/api.md` and `docs/components.md`). Seeded from `prisma/data/worldcup2026-schedule.json` via `node prisma/seed-quinielas.mjs`.
+## Unrelated tables in this database
 
-| Field | Type | Notes |
-|---|---|---|
-| id | String (cuid) | PK |
-| matchNumber | Int | unique; FIFA official number for knockout matches (73-104), our own chronological numbering for group stage (1-72) |
-| stage | MatchStage enum | GROUP \| ROUND_OF_32 \| ROUND_OF_16 \| QUARTERFINAL \| SEMIFINAL \| THIRD_PLACE \| FINAL |
-| groupName | String? | "A".."L", group stage only |
-| homeTeam / awayTeam | String? | concrete team name, once known |
-| homeTeamPlaceholder / awayTeamPlaceholder | String? | e.g. "Winner Match 73" — exactly one of team/placeholder set per side until resolved |
-| kickoffAt | DateTime | stored UTC; UI displays it in America/Mexico_City ("hora CDMX") |
-| venue | String? | |
-| homeScore / awayScore | Int? | actual final score (after extra time if played); null until the match ends |
-| decidedBy | DecidedBy enum? | REGULATION \| EXTRA_TIME \| PENALTIES |
-| penaltyHomeScore / penaltyAwayScore | Int? | shootout score, only set when decidedBy = PENALTIES |
-| winnerTeam | String? | derived on result entry; stays null for group-stage draws |
-| nextMatchId / nextMatchSlot | String? / MatchSlot? | self-relation ("MatchAdvancement"): which match/slot the winner advances to (knockout only) |
-| loserNextMatchId / loserNextMatchSlot | String? / MatchSlot? | self-relation ("MatchLoserAdvancement"); semifinals only — loser goes to the third-place match |
-| picks | QuinielaPick[] | |
-
-### QuinielaPick
-One user's prediction for one match.
-
-| Field | Type | Notes |
-|---|---|---|
-| id | String (cuid) | PK |
-| matchId | String | FK → Match (Cascade) |
-| userId | String | FK → User (Cascade) |
-| homeScore / awayScore | Int | required |
-| decidedBy | DecidedBy enum | default REGULATION |
-| penaltyHomeScore / penaltyAwayScore | Int? | only when decidedBy = PENALTIES |
-| updatedAt | DateTime | |
-
-Unique on `(matchId, userId)` — one pick per user per match; re-picking upserts. Locked (can no longer be created/changed) once `Match.kickoffAt` has passed.
+This same Postgres database also holds `Match` and `QuinielaPick` (plus the `MatchStage`,
+`DecidedBy`, `MatchSlot` enums) — a hidden World Cup prediction pool that is **not part of the
+Woodland Chronicles / Root app**. They share the DB purely for hosting convenience. Documented
+separately in **`docs/quinielas.md`** — don't treat them as part of this app's data model.
 
 ## Enums
 - `Role`: `ADMIN`, `MEMBER`
 - `VictoryType`: `SCORE`, `DOMINATION`, `COALITION`
 - `MomentKind`: `GLORY` (smart/record-worthy play), `TARD` (inside-joke blunder — "this associate really dumb")
-- `MatchStage`: `GROUP`, `ROUND_OF_32`, `ROUND_OF_16`, `QUARTERFINAL`, `SEMIFINAL`, `THIRD_PLACE`, `FINAL`
-- `DecidedBy`: `REGULATION`, `EXTRA_TIME`, `PENALTIES`
-- `MatchSlot`: `HOME`, `AWAY`
 
 ## Key constraints
 - Case-insensitive unique player names: custom SQL index in migration `20260610000008_case_insensitive_player_names`

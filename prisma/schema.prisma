@@ -187,7 +187,9 @@ model HallOfFameMoment {
 }
 
 // ─── Quinielas (World Cup prediction pool) ────────────────────────────────────
-// Global, hidden feature — not linked from the main app nav. See src/app/quinielas.
+// NOT PART OF WOODLAND CHRONICLES. Hidden feature at src/app/quinielas, sharing this
+// DB/repo for convenience only. Documented separately in docs/quinielas.md — do not
+// add to docs/schema.md.
 
 model Match {
   id          String     @id @default(cuid())
