@@ -59,13 +59,14 @@ The core UI. Fetches roster and games from API on load.
 
 **Game log panel:**
 - Lists all games newest first
-- Delete button visible to: the user who logged it OR group ADMINs. Clicking it swaps the trash icon for an inline "Delete? Yes / No" confirmation (tracked by `confirmDeleteId`) — deletion only happens on "Yes", guarding against accidental clicks
+- Delete and Edit VPs buttons render for every game regardless of viewer — permission (must be the user who logged it OR a group ADMIN) is enforced server-side (403), not hidden client-side. Clicking delete swaps the trash icon for an inline "Delete? Yes / No" confirmation (tracked by `confirmDeleteId`) — deletion only happens on "Yes", guarding against accidental clicks
+- **Edit VPs** (pencil icon, `editScoresId` state): opens an inline panel (`.edit-scores-panel`, spans the full card width) with one VP input per player, prefilled from their current `score` (blank if `null`). Save calls `PATCH /api/groups/[joinCode]/games/[id]` with `{ players: [{ id, score }] }`; same all-or-none client-side check as the log form. On success the returned game replaces the matching entry in `games` state — since the Avg column (below) is derived live from `games` on every render, no separate recalculation step is needed. Used both to fix a wrong VP and to backfill VPs on older games that predate the scoring feature (those have `score: null` on every player, not `0` — left unbackfilled rather than defaulted, so they correctly don't count toward anyone's average until edited in).
 - Log Game form (members only):
   - Date, Virtual/In-Person toggle, Hirelings toggle
   - Victory type: Score / Domination / Coalition
   - Player rows: name (from roster), faction, optional score (VP) input, winner checkbox
   - Scores are all-or-none: client blocks submit if some rows have a score and others don't (server enforces the same). Scores show in the battle log next to each player (`name · score`).
-  - Leaderboard has an **Avg** column = mean score across that player's scored games (`–` if they have none).
+  - Leaderboard has an **Avg** column = mean score across that player's scored games (`–` if they have none) — games with `score: null` are excluded from both the sum and the count, not treated as a 0.
   - Faction field is a type-to-filter combobox (`FactionSelect`): focus shows the full list, typing filters by name/id, arrow keys + Enter to select, click-outside/Escape to close
   - **Screenshot scan** ("📷 Scan screenshot to prefill" button): uses Tesseract.js (lazy-loaded ~15 MB, cached after first use) to OCR the image. Clusters all detected text by Y centroid (±20 px tolerance) and picks the cluster in the bottom 40% of the image that spans the widest horizontal range — that's the player names row, since all names appear side-by-side in the Root end-game screen. Names are sorted left-to-right. For each name, the banner color is sampled just below the text bounding box and matched to the nearest `FACTION_REF_COLORS` entry (Euclidean RGB distance, deduplicating across players). Pre-fills player rows with: roster match if name found case-insensitively, otherwise raw OCR text; plus matched faction. `scanning` state disables the button and shows "⏳ Scanning…" while OCR runs.
 
@@ -100,7 +101,8 @@ The core UI. Fetches roster and games from API on load.
   - **Narrow cards** (`@container (max-width: 480px)`): the footer drops to its own full-width row beneath everything, so its tags never overflow the cramped winner column.
   - **winner** (`.game-winner`, a flex column): a large 72px `FactionIcon` beside a text column stacking the "Victor"/"Coalition" label, player name, and faction name. Tops align with the "Losers" label.
   - **other players**: a single vertical column of borderless rows under a "Losers" label (`.game-players` → `.player-chip`: a small 26px `FactionPortrait` + name, no box/border).
-  - **delete** control (trash icon) vertically centered on the far right (`align-self: center`).
+  - **delete** grid area (`.game-actions`, a small flex column) holds the edit-VPs pencil button above the trash/confirm-delete control, vertically centered on the far right.
+  - When `editScoresId` matches the card, `.edit-scores-panel` renders below the footer, spanning the full grid width (`grid-column: 1 / -1`) regardless of the wide/narrow layout.
   - Footer contents (one line, `.footer-date` + `.footer-tag` variants): date, format tag (🖥️ Virtual / 🎲 In Person), victory type, and a Hirelings tag when applicable — each tag carries an emoji so they share height.
 - Paginated: 5 / 10 / 15 per page, configurable via page-size selector (page resets to 0 on change)
 - Shows page X of Y, element range (e.g. "1–5 of 18 battles"), Prev/Next buttons
@@ -120,7 +122,7 @@ Standings and Battle Log are wrapped in a `.main-grid`: a single stacked column 
 **Key derived state:**
 - `isMember`: `!!me && roster.some(r => r.player.claimedBy?.id === me.id)`
 - `rosterElo`: map from lowercased player name → `GroupPlayer.groupElo`
-- `playerStats`: per-player `{ wins, games, factions: Set<string>, factionDetail: Record<factionId, {games, wins}> }`
+- `playerStats`: per-player `{ wins, games, scoreSum, scoredGames, factions: Set<string>, factionDetail: Record<factionId, {games, wins}> }` — `avgScore` (`scoreSum / scoredGames`, or `null` if `scoredGames` is 0) is derived onto each `leaderboard` entry below
 - `leaderboard`: `playerStats` values with ELO attached, sorted by `groupElo` desc
 
 **CSS approach:** All styles live in a single `styles` string constant rendered via `<style>{styles}</style>`. No CSS modules. `html { font-size: 114% }` bumps the entire type scale up ~14%.
