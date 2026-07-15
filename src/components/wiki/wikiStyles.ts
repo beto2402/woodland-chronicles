@@ -22,7 +22,7 @@ export const wikiStyles = `
   .wiki-combobox-input:focus { border-color: #c9922a; }
   .wiki-combobox-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; max-height: 320px; overflow-y: auto; z-index: 10; }
   .wiki-combobox-empty { padding: 12px 14px; color: #5a6a4a; font-size: 0.85rem; }
-  .wiki-combobox-option { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+  .wiki-combobox-option { padding: 10px 14px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
   .wiki-combobox-option.active { background: #1a2e1a; }
   .wiki-combobox-type { font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: #8a9a7a; border: 1px solid #2d3b2d; border-radius: 3px; padding: 1px 6px; flex-shrink: 0; }
 
@@ -69,7 +69,7 @@ export const wikiStyles = `
   .lookup-result { padding: 8px 12px; cursor: pointer; font-size: 0.85rem; }
   .lookup-result:hover { background: #1a2e1a; }
   .lookup-panel { margin-top: 10px; background: #0f1a0f; border: 1px solid #2d3b2d; border-left: 3px solid #c9922a; border-radius: 3px; padding: 12px 14px; }
-  .lookup-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .lookup-panel-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
   .lookup-panel-header strong { font-family: 'Cinzel', serif; font-size: 0.9rem; color: #c9922a; }
   .lookup-panel-header button { background: none; border: none; color: #5a6a4a; cursor: pointer; font-size: 0.9rem; padding: 2px 6px; }
   .lookup-panel-header button:hover { color: #c9922a; }
@@ -80,7 +80,7 @@ export const wikiStyles = `
   .wizard-variant-picker { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #2d3b2d; }
   .wizard-variant-description { font-size: 0.82rem; color: #a0b090; margin-top: 8px; line-height: 1.5; }
   .wizard-modifier-list { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 8px; }
-  .wizard-modifier-option { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #f2e8d0; cursor: pointer; }
+  .wizard-modifier-option { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 0.82rem; color: #f2e8d0; cursor: pointer; }
   .wizard-modifier-option.disabled { color: #5a6a4a; cursor: not-allowed; }
   .wizard-action-modifier { font-size: 0.85rem; color: #e08a3a; background: rgba(224,138,58,0.08); border-left: 2px solid rgba(224,138,58,0.5); padding: 6px 10px; margin: 6px 0 0; line-height: 1.5; }
   .wizard-action-modifier strong { color: #c9922a; }
@@ -91,8 +91,8 @@ export const wikiStyles = `
   .wizard-failure-body { margin-top: 8px; padding-left: 12px; border-left: 2px solid rgba(224,138,58,0.4); }
 
   .wizard { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 24px; }
-  .wizard-beginner-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #a0b090; margin-bottom: 16px; cursor: pointer; }
-  .wizard-phase-pills { display: flex; gap: 8px; margin-bottom: 10px; }
+  .wizard-beginner-toggle { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.82rem; color: #a0b090; margin-bottom: 16px; cursor: pointer; }
+  .wizard-phase-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .wizard-phase-pill { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6a4a; background: none; border: 1px solid #2d3b2d; border-radius: 12px; padding: 3px 10px; cursor: pointer; }
   .wizard-phase-pill:hover { border-color: #c9922a; }
   .wizard-phase-pill.active { color: #c9922a; border-color: #c9922a; }
@@ -103,7 +103,7 @@ export const wikiStyles = `
   .wizard-action p { line-height: 1.6; font-size: 0.92rem; margin: 0 0 14px; }
   .wizard-tip { background: #152515; border-left: 3px solid #c9922a; border-radius: 3px; padding: 10px 12px; font-size: 0.85rem; margin-top: 10px; line-height: 1.5; }
   .wizard-nav { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #2d3b2d; }
-  .wizard-nav-group { display: flex; align-items: center; gap: 8px; }
+  .wizard-nav-group { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
   .wizard-nav-label { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: #5a6a4a; width: 52px; flex-shrink: 0; }
   .wizard-nav-group button { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.76rem; padding: 7px 16px; }
   .wizard-nav-group button:hover:not(:disabled) { border-color: #c9922a; color: #c9922a; }
