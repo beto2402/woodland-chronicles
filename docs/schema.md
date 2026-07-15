@@ -89,6 +89,37 @@ A notable, manually-recorded moment attached to a specific game. Deleted with it
 | createdByUserId | String? | FK → User (SetNull on delete) |
 | createdAt | DateTime | default now() |
 
+### Tip
+A reusable gameplay recommendation shown in "Beginner mode" on the wiki's per-faction turn
+wizard (`src/app/wiki/[gameId]/facciones/[factionId]/jugar/`). Scoped by `gameId` so future
+games besides Root can reuse tip keys independently. The tip's own content (concepts, cards,
+faction turn-guides) is **not** in this database — it's static JSON under `game-content/<gameId>/`
+(see `docs/components.md`); only these reusable, many-to-many tips are DB-backed.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String (cuid) | PK |
+| gameId | String | e.g. `"root"` — matches `game-content/<gameId>/` |
+| key | String | stable slug for idempotent seeding; unique per `(gameId, key)` |
+| text | String (Text) | Spanish tip text; may contain `[[concept:id]]`/`[[card:key]]` hyperlink markup |
+| targets | TipTarget[] | which (faction, action) pairs this tip applies to |
+
+### TipTarget
+Join table: one `(factionId, actionId)` pairing a `Tip` applies to. A tip can target multiple
+factions and/or multiple actions (many-to-many). `actionId` is nullable — null means the tip
+applies generally to the faction, not tied to one action.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String (cuid) | PK (synthetic — a composite PK can't contain the nullable `actionId`) |
+| tipId | String | FK → Tip (Cascade) |
+| factionId | String | free string matching `FACTIONS[].id` in `src/components/FactionIcon.tsx` — not an FK, same convention as `GamePlayer.faction` |
+| actionId | String? | free string matching an action id in that faction's `game-content/<gameId>/faction-guides/*.json` — not an FK; null = general tip for the faction, no specific action |
+
+A tip's **phase** (Birdsong/Daylight/Night) is never stored directly — it's derived by looking
+up which `ActionBlock` in the faction's static guide contains `actionId`, avoiding a duplicated,
+driftable field.
+
 ## Unrelated tables in this database
 
 This same Postgres database also holds `Match` and `QuinielaPick` (plus the `MatchStage`,

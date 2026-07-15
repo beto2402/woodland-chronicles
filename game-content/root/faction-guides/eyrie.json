@@ -1,0 +1,206 @@
+{
+  "factionId": "eyrie",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "Las Dinastías del Nido siguen un Decreto: un conjunto de cartas que se van acumulando en columnas (Reclutar, Mover, Batallar, Construir) y que están OBLIGADAS a resolver por completo cada Día. Si no pueden, caen en Disturbios: pierden puntos, descartan el Decreto y deben cambiar de líder."
+    }
+  },
+  "actions": {
+    "emergency-orders": {
+      "translations": {
+        "es": {
+          "title": "Órdenes de Emergencia",
+          "body": "Si no tienes cartas en tu [[concept:hand-of-cards|mano]], roba 1 carta."
+        }
+      }
+    },
+    "add-to-decree": {
+      "translations": {
+        "es": {
+          "title": "Añadir al Decreto",
+          "body": "Añade 1 o 2 cartas al Decreto, revelándolas de tu mano y colocándolas en cualquier columna (Reclutar, Mover, Batallar o Construir) que elijas; cada columna puede tener cualquier cantidad de cartas. Como máximo 1 de las cartas añadidas puede ser de Pájaro."
+        }
+      }
+    },
+    "new-roost": {
+      "translations": {
+        "es": {
+          "title": "Nuevo Nido",
+          "body": "Si no tienes ningún Nido en el mapa, coloca un Nido y 3 guerreros en el claro con menos guerreros donde quepan todas esas piezas."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con Nidos",
+          "body": "Activa tus Nidos para [[concept:craft|fabricar]] cartas de tu mano. Ojo: por Desdén al Comercio, al fabricar un objeto anotas solo 1 punto de victoria en vez de los indicados en la carta."
+        }
+      }
+    },
+    "recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Coloca 1 guerrero en cualquier claro con un Nido cuyo palo coincida con el de la carta."
+        }
+      }
+    },
+    "move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Mueve guerreros (al menos 1) desde cualquier claro cuyo palo coincida con el de la carta."
+        }
+      }
+    },
+    "battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Inicia una [[concept:battle|batalla]] en cualquier claro cuyo palo coincida con el de la carta."
+        }
+      }
+    },
+    "build": {
+      "translations": {
+        "es": {
+          "title": "Construir",
+          "body": "Coloca un Nido en un claro que gobiernes, cuyo palo coincida con el de la carta y que no tenga ya un Nido."
+        }
+      }
+    },
+    "resolve-decree": {
+      "translations": {
+        "es": {
+          "title": "Resolver el Decreto",
+          "body": "Debes resolver el Decreto empezando por la columna más a la izquierda (Reclutar) y avanzando hacia la derecha (Mover, Batallar, Construir). Dentro de cada columna, resuelve todas sus cartas en el orden que quieras, pero cada una te obliga exactamente a la acción de esa columna — no es una elección libre. Si en algún momento no puedes completar del todo la acción de una carta, caes inmediatamente en Disturbios (ver abajo)."
+        }
+      }
+    },
+    "score-points": {
+      "translations": {
+        "es": {
+          "title": "Anotar puntos",
+          "body": "Anota los puntos de victoria del espacio vacío más a la derecha de tu tablero de Nidos."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 adicional por cada icono de bonificación de robo que hayas descubierto en tu tablero de facción."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    },
+    "turmoil-humiliate": {
+      "translations": {
+        "es": {
+          "title": "Disturbios: Humillar",
+          "body": "Pierdes 1 punto de victoria por cada carta de Pájaro en el Decreto (incluyendo tus Visires Leales)."
+        }
+      }
+    },
+    "turmoil-purge": {
+      "translations": {
+        "es": {
+          "title": "Disturbios: Purgar",
+          "body": "Descarta todas las cartas del Decreto excepto tus Visires Leales."
+        }
+      }
+    },
+    "turmoil-depose": {
+      "translations": {
+        "es": {
+          "title": "Disturbios: Deponer",
+          "body": "Voltea boca abajo a tu líder actual y apártalo, elige un nuevo líder de entre los que están boca arriba, y colócalo en tu tablero de facción. Coloca tus Visires Leales en las columnas del Decreto que indique tu nuevo líder. (Si no queda ningún líder boca arriba, voltea todos boca arriba antes de elegir.)"
+        }
+      }
+    },
+    "turmoil-rest": {
+      "translations": {
+        "es": {
+          "title": "Disturbios: Descansar",
+          "body": "Termina tu Día de inmediato y comienza tu Noche."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["emergency-orders"], "repeat": "once" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["add-to-decree"], "repeat": { "max": 2 } },
+    { "kind": "action", "id": "b3", "phase": "birdsong", "actionIds": ["new-roost"], "repeat": "once" },
+    { "kind": "action", "id": "b4", "phase": "daylight", "actionIds": ["craft"], "repeat": "unlimited" },
+    {
+      "kind": "driven",
+      "id": "b5",
+      "phase": "daylight",
+      "actionIds": ["recruit", "move", "battle", "build"],
+      "translations": { "es": {
+        "title": "Resolver el Decreto",
+        "body": "Debes resolver el Decreto empezando por la columna más a la izquierda (Reclutar) y avanzando hacia la derecha (Mover, Batallar, Construir). Dentro de cada columna, resuelve todas sus cartas en el orden que quieras, pero cada una te obliga exactamente a la acción de esa columna — no es una elección libre."
+      } },
+      "onFailureBlocks": [
+        { "kind": "action", "id": "b5-fail-1", "phase": "daylight", "actionIds": ["turmoil-humiliate"], "repeat": "once" },
+        { "kind": "action", "id": "b5-fail-2", "phase": "daylight", "actionIds": ["turmoil-purge"], "repeat": "once" },
+        { "kind": "action", "id": "b5-fail-3", "phase": "daylight", "actionIds": ["turmoil-depose"], "repeat": "once" },
+        { "kind": "action", "id": "b5-fail-4", "phase": "daylight", "actionIds": ["turmoil-rest"], "repeat": "once" }
+      ]
+    },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["score-points"], "repeat": "once" },
+    { "kind": "action", "id": "b7", "phase": "evening", "actionIds": ["draw"], "repeat": "once" },
+    { "kind": "action", "id": "b8", "phase": "evening", "actionIds": ["discard"], "repeat": "once" }
+  ],
+  "variants": [
+    { "id": "builder", "translations": { "es": {
+      "name": "Constructora",
+      "description": "Tus Visires Leales empiezan en las columnas Reclutar y Mover."
+    } }, "modifierIds": ["builder-craft"] },
+    { "id": "charismatic", "translations": { "es": {
+      "name": "Carismática",
+      "description": "Tus Visires Leales empiezan en las columnas Reclutar y Batallar."
+    } }, "modifierIds": ["charismatic-recruit"] },
+    { "id": "commander", "translations": { "es": {
+      "name": "Comandante",
+      "description": "Tus Visires Leales empiezan en las columnas Mover y Batallar."
+    } }, "modifierIds": ["commander-battle"] },
+    { "id": "despot", "translations": { "es": {
+      "name": "Déspota",
+      "description": "Tus Visires Leales empiezan en las columnas Mover y Construir."
+    } }, "modifierIds": ["despot-battle"] }
+  ],
+  "modifiers": [
+    { "id": "builder-craft", "targetActionId": "craft", "translations": { "es": {
+      "name": "Constructora",
+      "appendBody": "Ignoras tu Desdén al Comercio: anotas los puntos de victoria normales de los objetos que fabriques."
+    } } },
+    { "id": "charismatic-recruit", "targetActionId": "recruit", "translations": { "es": {
+      "name": "Carismática",
+      "appendBody": "Coloca 2 guerreros en vez de 1 cada vez que tomes esta acción."
+    } } },
+    { "id": "commander-battle", "targetActionId": "battle", "translations": { "es": {
+      "name": "Comandante",
+      "appendBody": "Como atacante, das un golpe adicional."
+    } } },
+    { "id": "despot-battle", "targetActionId": "battle", "translations": { "es": {
+      "name": "Déspota",
+      "appendBody": "Cada vez que elimines al menos un edificio o ficha enemiga en esta batalla, anotas 1 punto de victoria adicional."
+    } } }
+  ],
+  "notes": {
+    "es": [
+      "Señores del Bosque: las Dinastías gobiernan un claro incluso en caso de empate a guerreros+edificios, siempre que tengan al menos una pieza propia ahí.",
+      "Desdén al Comercio: al fabricar un objeto, las Dinastías anotan solo 1 punto de victoria en vez de los indicados en la carta (salvo que su líder sea Constructora)."
+    ]
+  }
+}

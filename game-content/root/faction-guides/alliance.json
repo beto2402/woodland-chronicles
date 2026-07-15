@@ -1,0 +1,113 @@
+{
+  "factionId": "alliance",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "La Alianza del Bosque no gobierna claros del modo tradicional: expande su Simpatía y puede estallar en Revuelta para tomar claros por sorpresa. Como defensora en batalla, la Alianza usa la regla especial de Guerra de Guerrillas: recibe los golpes del resultado MENOR del dado, y el atacante recibe los del MAYOR — justo al revés que en una batalla normal."
+    }
+  },
+  "actions": {
+    "revolt": {
+      "translations": {
+        "es": {
+          "title": "Revuelta",
+          "body": "Elige un claro con simpatía que NO tenga ya una Base, y cuyo palo coincida con una Base que aún tengas disponible (tienes una Base por cada palo: Conejo, Zorro y Ratón). Gasta 2 Simpatizantes del palo de ese claro. Retira todas las piezas enemigas del claro, coloca ahí la Base correspondiente y coloca guerreros iguales al número de claros con simpatía de ese mismo palo. Además, coloca 1 guerrero directamente en la casilla de Oficiales (se convierte en Oficial). Puedes repetir esta acción tantas veces como quieras, pero en la práctica no más de 3 veces en toda la partida, ya que solo hay una Base de cada palo."
+        }
+      }
+    },
+    "spread-sympathy": {
+      "translations": {
+        "es": {
+          "title": "Extender simpatía",
+          "body": "Elige un claro sin simpatía adyacente a uno con simpatía (o cualquier claro si aún no tienes ninguno con simpatía). Gasta Simpatizantes del palo de ese claro, según el coste indicado sobre la ficha de simpatía en tu tablero de facción. Ley Marcial: gasta 1 Simpatizante adicional de ese palo si el claro elegido tiene 3 o más guerreros de un mismo rival. Coloca la ficha de simpatía y anota los puntos de victoria del espacio destapado. Puedes repetirlo tantas veces como quieras mientras tengas Simpatizantes suficientes."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar",
+          "body": "[[concept:craft|Fabrica]] una carta activando fichas de simpatía del palo correspondiente — no hace falta gobernar el claro."
+        }
+      }
+    },
+    "mobilize": {
+      "translations": {
+        "es": {
+          "title": "Movilizar",
+          "body": "Añade una carta de tu mano, boca abajo, a tu montón de Simpatizantes (repite la acción para añadir más de una)."
+        }
+      }
+    },
+    "train": {
+      "translations": {
+        "es": {
+          "title": "Adiestrar",
+          "body": "Gasta una carta cuyo palo coincida con el de un claro donde tengas una Base, para colocar un guerrero en la casilla de Oficiales — se convierte en Oficial. Un guerrero no puede ser guerrero normal y Oficial a la vez."
+        }
+      }
+    },
+    "military-move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Toma un movimiento."
+        }
+      }
+    },
+    "military-battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Inicia una [[concept:battle|batalla]]. Recuerda la Guerra de Guerrillas: como defensora, la Alianza recibe los golpes del resultado menor del dado, y el atacante los del mayor."
+        }
+      }
+    },
+    "military-recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Coloca 1 guerrero en cualquier claro con una Base."
+        }
+      }
+    },
+    "organize": {
+      "translations": {
+        "es": {
+          "title": "Organizar",
+          "body": "Retira 1 guerrero de la Alianza de un claro sin simpatía, para colocar ahí una ficha de simpatía. Anota los puntos de victoria del espacio destapado en tu tablero de facción."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 adicional por cada icono de bonificación de robo que hayas descubierto en tu tablero de facción."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["revolt"], "repeat": { "max": 3 } },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["spread-sympathy"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b3", "phase": "daylight", "actionIds": ["craft", "mobilize", "train"], "repeat": "unlimited" },
+    {
+      "kind": "action",
+      "id": "b4",
+      "phase": "evening",
+      "actionIds": ["military-move", "military-battle", "military-recruit", "organize"],
+      "repeat": { "maxEs": "tu número de Oficiales" }
+    },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["draw"], "repeat": "once" },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["discard"], "repeat": "once" }
+  ]
+}

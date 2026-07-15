@@ -1,0 +1,121 @@
+{
+  "factionId": "riverfolk",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "La Compañía Ribereña no tiene piezas de fabricación: todo lo paga con fondos (guerreros que pasan por las casillas Fondos → Comprometidos/Pagos). Su mano es pública y cualquier jugador puede comprarle servicios en su propio Alba."
+    }
+  },
+  "actions": {
+    "protectionism": {
+      "translations": {
+        "es": {
+          "title": "Proteccionismo",
+          "body": "Si la casilla de Pagos está vacía, coloca ahí 2 guerreros."
+        }
+      }
+    },
+    "score-dividends": {
+      "translations": {
+        "es": {
+          "title": "Dividendos",
+          "body": "Si tienes algún puesto comercial en el mapa, anota 1 punto de victoria por cada 2 fondos que tengas. (Los guerreros en Pagos o Comprometidos no cuentan.)"
+        }
+      }
+    },
+    "gather-funds": {
+      "translations": {
+        "es": {
+          "title": "Recaudar fondos",
+          "body": "Mueve todos los guerreros de tu tablero de facción a la casilla de Fondos."
+        }
+      }
+    },
+    "move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Compromete 1 fondo (mueve ese guerrero a Comprometidos) para tomar un movimiento."
+        }
+      }
+    },
+    "battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Compromete 1 fondo para iniciar una [[concept:battle|batalla]]."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar",
+          "body": "Compromete fondos según el coste de la carta para [[concept:craft|fabricar]] — pero en vez de ir a Comprometidos, esos guerreros se colocan en los espacios de tus pistas de Puestos Comerciales. Alternativa (Exportar): renuncia al efecto de la carta fabricada para en su lugar colocar 1 guerrero de la Compañía en Pagos."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar",
+          "body": "Compromete 1 fondo para robar una carta."
+        }
+      }
+    },
+    "recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Gasta 1 fondo (ese guerrero vuelve a tu suministro) para colocar un guerrero en cualquier claro con un río."
+        }
+      }
+    },
+    "establish-trade-post": {
+      "translations": {
+        "es": {
+          "title": "Establecer puesto con guarnición",
+          "body": "Gasta 2 fondos — pero pertenecientes a quien gobierne el claro elegido, no necesariamente a ti. Elige un claro sin puesto comercial que cumpla los requisitos, gasta esos 2 fondos, coloca el puesto comercial y un guerrero, y anota los puntos de victoria mostrados."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    },
+    "set-costs": {
+      "translations": {
+        "es": {
+          "title": "Fijar precios",
+          "body": "Puedes mover cada marcador de servicio a cualquier espacio de su pista, fijando así un nuevo precio para ese servicio."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["protectionism"], "repeat": "once" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["score-dividends"], "repeat": "once" },
+    { "kind": "action", "id": "b3", "phase": "birdsong", "actionIds": ["gather-funds"], "repeat": "once" },
+    {
+      "kind": "action",
+      "id": "b4",
+      "phase": "daylight",
+      "actionIds": ["move", "battle", "craft", "draw", "recruit", "establish-trade-post"],
+      "repeat": "unlimited"
+    },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["discard"], "repeat": "once" },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["set-costs"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "Comprar servicios: la Compañía no es la única que actúa con sus fondos — al comienzo de SU PROPIO Alba, cualquier otro jugador puede comprar servicios de la Compañía (Carta en mano, Barcazas, Mercenarios), pagando con guerreros que van a la casilla de Pagos de la Compañía. No es una acción de turno de la Compañía; ocurre en el turno de otro jugador.",
+      "Nadadores: la Compañía trata los ríos como caminos para mover, sin necesidad de gobernar nada para cruzarlos.",
+      "Mano pública: la mano de la Compañía está siempre boca arriba para todos los jugadores.",
+      "Ruptura comercial: si un puesto comercial de la Compañía es retirado, pierde la mitad de sus fondos (redondeando hacia arriba) y ese puesto no se puede recuperar."
+    ]
+  }
+}

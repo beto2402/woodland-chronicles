@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 
@@ -33,6 +34,8 @@ const styles = `
   .group-item:hover { border-color: #c9922a; }
   .group-item-name { font-weight: 700; }
   .group-item-code { font-size: 0.72rem; color: #5a6a4a; letter-spacing: 0.1em; }
+  .wiki-nav-link { display: inline-block; margin-top: 12px; font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.12em; color: #c9922a; text-decoration: none; border: 1px solid #2d3b2d; border-radius: 4px; padding: 5px 12px; transition: all 0.15s; }
+  .wiki-nav-link:hover { background: rgba(201,146,42,0.1); border-color: #c9922a; }
 `;
 
 type Group = { id: string; name: string; joinCode: string };
@@ -92,6 +95,7 @@ export default function HomePage() {
         <div className="home">
           <div className="hero-title">The Woodland Chronicles</div>
           <div className="hero-sub">Root · Leaderboard</div>
+        <Link className="wiki-nav-link" href="/wiki">📖 Cómo jugar Root</Link>
           <div className="card">
             <div className="section-title">Sign in to continue</div>
             <button className="btn-google" onClick={() => signIn("google")}>
@@ -129,6 +133,7 @@ export default function HomePage() {
       <div className="home">
         <div className="hero-title">The Woodland Chronicles</div>
         <div className="hero-sub">Root · Leaderboard</div>
+        <Link className="wiki-nav-link" href="/wiki">📖 Cómo jugar Root</Link>
 
         <div className="card">
           <div className="user-bar">

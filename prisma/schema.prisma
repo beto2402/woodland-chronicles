@@ -186,6 +186,45 @@ model HallOfFameMoment {
   createdBy User? @relation("CreatedMoments", fields: [createdByUserId], references: [id], onDelete: SetNull)
 }
 
+// ─── Wiki (in-app "how to play" guide) ────────────────────────────────────────
+// Static content (concepts, cards, faction turn-guides) lives in game-content/<gameId>/,
+// not the DB — see game-content/root/ and docs/components.md. Only reusable, many-to-many
+// gameplay tips are DB-backed here.
+
+// A reusable gameplay recommendation shown in "Beginner mode" on a game's turn wizard.
+// Many-to-many with factions via TipTarget (a tip can apply to several factions), and
+// scoped by gameId so future games besides Root can reuse tip keys independently.
+model Tip {
+  id        String      @id @default(cuid())
+  gameId    String // e.g. "root" — matches game-content/<gameId>/
+  key       String // stable slug for idempotent seeding
+  text      String      @db.Text
+  createdAt DateTime    @default(now())
+
+  targets TipTarget[]
+
+  @@unique([gameId, key])
+}
+
+// One (faction, action) pairing a tip applies to. actionId is nullable: a tip can target a
+// specific action (its phase is derived by looking up which ActionBlock contains that
+// action in that faction's static guide — not duplicated here) OR apply generally to a
+// faction with no specific action tie. factionId/actionId are free-form strings matching
+// the static content in game-content/<gameId>/faction-guides/*.json — not FKs (no such
+// tables exist), mirroring the existing GamePlayer.faction convention. A synthetic id (not
+// a composite PK) is used because Postgres composite primary keys can't contain a nullable
+// column.
+model TipTarget {
+  id        String  @id @default(cuid())
+  tipId     String
+  factionId String
+  actionId  String?
+
+  tip Tip @relation(fields: [tipId], references: [id], onDelete: Cascade)
+
+  @@index([factionId, actionId])
+}
+
 // ─── Quinielas (World Cup prediction pool) ────────────────────────────────────
 // NOT PART OF WOODLAND CHRONICLES. Hidden feature at src/app/quinielas, sharing this
 // DB/repo for convenience only. Documented separately in docs/quinielas.md — do not

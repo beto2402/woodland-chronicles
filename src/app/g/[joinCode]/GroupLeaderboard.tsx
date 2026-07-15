@@ -53,6 +53,7 @@ const styles = `
   .join-code span { color: #c9922a; letter-spacing: 0.25em; }
   .hof-link { display: inline-block; margin-top: 12px; font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.12em; color: #c9922a; text-decoration: none; border: 1px solid #2d3b2d; border-radius: 4px; padding: 5px 12px; transition: all 0.15s; }
   .hof-link:hover { background: rgba(201,146,42,0.1); border-color: #c9922a; }
+  .hof-link + .hof-link { margin-left: 8px; }
 
   .container { max-width: 780px; margin: 0 auto; padding: 0 16px; }
   .section-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--accent-label); text-transform: uppercase; margin: 32px 0 12px; }
@@ -768,6 +769,7 @@ export default function GroupLeaderboard({
           <div className="hero-sub">{groupName}</div>
           <div className="join-code">Join code: <span>{joinCode}</span></div>
           <Link className="hof-link" href={`/g/${joinCode}/hall-of-fame`}>🏛 Hall of Fame</Link>
+          <Link className="hof-link" href="/wiki">📖 Cómo jugar Root</Link>
         </div>
 
         <div className="container">

@@ -14,6 +14,8 @@ Client component. Entry point for all users.
 
 **Key state:** `groups` (null = loading, [] = none, [...] = fetched)
 
+A "📖 Cómo jugar Root" link to `/wiki` is shown in both the signed-out and signed-in states.
+
 ---
 
 ### `src/app/g/[joinCode]/page.tsx` — Group page (server component)
@@ -43,6 +45,8 @@ Members get a "+ Record a Moment" form: pick a game, title, description, optiona
 
 ### `src/app/g/[joinCode]/GroupLeaderboard.tsx` — Main leaderboard (client component)
 The core UI. Fetches roster and games from API on load.
+
+The hero section has both a "🏛 Hall of Fame" link and a "📖 Cómo jugar Root" link (to `/wiki`).
 
 **Auth bar (hero section):**
 - Signed out → Sign in button
@@ -126,6 +130,129 @@ Standings and Battle Log are wrapped in a `.main-grid`: a single stacked column 
 - `leaderboard`: `playerStats` values with ELO attached, sorted by `groupElo` desc
 
 **CSS approach:** All styles live in a single `styles` string constant rendered via `<style>{styles}</style>`. No CSS modules. `html { font-size: 114% }` bumps the entire type scale up ~14%.
+
+---
+
+## Wiki (`src/app/wiki/`)
+
+In-app "how to play" guide. Displayed in Spanish, searchable in English or Spanish. Scoped by
+`gameId` in both routes and data from day one (`SUPPORTED_GAMES = ["root"]` today) so a second
+game later is additive, not a rearchitecture — see `game-content/root/` below. No API routes;
+everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Prisma (tips).
+
+**Routes** (all under `src/app/wiki/[gameId]/`, server components, 404 if `gameId` isn't in
+`SUPPORTED_GAMES`):
+- `src/app/wiki/page.tsx` — redirects to `/wiki/root` (only game today, so no real picker UI yet)
+- `[gameId]/page.tsx` — search + links to the three sections below
+- `[gameId]/conceptos/page.tsx` + `[id]/page.tsx` — glossary list + detail
+- `[gameId]/cartas/page.tsx` + `[id]/page.tsx` — card list + detail, with a beginner-mode
+  "how to craft this, per faction" section
+- `[gameId]/facciones/page.tsx` + `[factionId]/page.tsx` — faction grid + overview (reuses
+  `FactionPortrait`/`FactionIcon` from `FactionIcon.tsx`); 404 if `factionId` isn't a real faction
+- `[gameId]/facciones/[factionId]/jugar/page.tsx` — fetches the faction's static turn-guide plus
+  its DB `Tip`s, renders `PlayGuideWizard`
+
+**Components** (`src/components/wiki/`):
+- `WikiText.tsx` — renders `[[concept:id]]` / `[[card:key]]` (optionally `|custom label`) markup
+  embedded in translated body text as internal links. ~25-line regex parser, no markdown library.
+- `WikiSearch.tsx` — type-to-filter combobox modeled on `FactionSelect.tsx`; matches every
+  populated language's name/aliases (not a hardcoded English/Spanish pair), merging concepts +
+  cards + the 14 `FACTIONS`.
+- `PlayGuideWizard.tsx` (client) — two-tier navigation over a faction's `GuideBlock`s (see
+  below): "Fase ◀◀/▶▶" jumps straight to the next/previous phase's first block, "Acción ←/→"
+  steps within the current phase. Position (`phaseIdx`/`actionIdx` per faction) and beginner mode
+  persist to `localStorage` (`wiki:${gameId}:${factionId}:progress`, `wiki:beginnerMode`) so a
+  visitor resumes where they left off. A `DrivenActionBlock` screen shows its explanatory text
+  plus a collapsible "¿Qué pasa si no puedes completarla?" panel listing `onFailureBlocks` inline.
+  If the guide has `variants` (e.g. Vagabond's character, Eyrie's leader), a one-time picker
+  (defaults to the first variant) appears above the phase pills, persisted to
+  `wiki:${gameId}:${factionId}:variant`; the chosen variant's `actionOverrides` are merged over
+  `guide.actions` before rendering. Matching `Tip`s show inline per screen when beginner mode is on.
+- `CraftingExplanation.tsx` (client) — beginner-mode-only block on a card's detail page; reads
+  the same `localStorage` flag `PlayGuideWizard` writes, and phrases the card's
+  `crafting_requirements` in each known faction's own terms (see `faction-crafting.ts`).
+- `InGameLookup.tsx` (client) — embedded card search rendered at the top of the "jugar" wizard,
+  so looking up a card mid-walkthrough never navigates away. Filters `getAllCards(gameId)` by
+  English/Spanish name; picking a result shows it inline (name, `crafting_requirements`, body).
+  Cross-references inside that body (`[[card:x]]`/`[[concept:x]]`) are rendered as buttons (not
+  `<Link>`s) that swap the inline panel to the new target instead of navigating, so chained
+  lookups also stay inside the wizard. Shares its markup parser (`parseWikiText.ts`) with
+  `WikiText.tsx` rather than duplicating the regex.
+- `wikiStyles.ts` — one shared `styles` template-literal string (same "no CSS modules, no
+  Tailwind" convention as the rest of the app) imported by every wiki page, instead of
+  duplicating the ruleset per page.
+
+**Lib** (`src/lib/wiki/`):
+- `types.ts` — `LanguageCode` (plain string, not a fixed union), `Concept`, `CardEntry`,
+  `Action`, `ActionBlock`, `DrivenActionBlock`, `GuideBlock`, `FactionVariant`, `FactionTurnGuide`,
+  `FactionCraftingInfo`. Every translatable field is a `Partial<Record<LanguageCode, ...>>` map,
+  not fixed `nameEn`/`nameEs`-style fields, so adding a language is new content, not a type change.
+- `parseWikiText.ts` — the `[[concept:id]]`/`[[card:key]]` regex parser shared by `WikiText.tsx`
+  (real navigation) and `InGameLookup.tsx` (inline panel swap), so both stay in sync.
+- `loaders.ts` — `gameId`-scoped getters (`getAllConcepts`, `getConcept`, `getAllCards`,
+  `getCard`, `getFactionGuide`, `findBlockForAction`) reading the JSON under `game-content/<gameId>/`.
+  Card data (`translations/base-deck.json`) is keyed by base-language (English) card name and
+  normalized here: `"esp"` → `"es"`, and any `"(EN unverified)"` planning-time flag in a key is
+  stripped into a clean `nameEn` + `nameEnUnverified` boolean + a URL-safe `id` slug, so it never
+  leaks into routes or search. `findBlockForAction` also searches each `DrivenActionBlock`'s
+  `onFailureBlocks`, so a tip can target a Turmoil-style consequence step too.
+- `search-index.ts` — `buildSearchIndex(gameId)` / `searchIndex(entries, query)`: merges
+  concepts + cards + factions into one flat array, substring-matched against every populated
+  language's name/aliases.
+- `faction-crafting.ts` — `FactionCraftingInfo` per faction (which piece it activates to craft,
+  how it's obtained) for the beginner-mode card explanation. Covers all 10 factions with a
+  turn-guide today: Marquise (Workshop), Alliance (Sympathy token), Eyrie (Roost), Vagabond
+  (bespoke — exhausts Hammer items directly, no board piece, no once/turn cap), Riverfolk (bespoke
+  — no piece at all, commits funds instead), Lizard Cult (Gardens matching the *current* Outcast
+  suit), Underground Duchy (Citadel/Market), Keepers in Iron (Waystation), Twilight Council
+  (Assembly), Knaves of the Deepwood (bespoke — Acting Captain or acclaim, no fixed piece) — add
+  more as guides are written.
+
+**Turn-guide data model** — a `FactionTurnGuide.blocks` is a sequence of `GuideBlock`s (a
+discriminated union on `kind`), rendered in array order (no separate ordering field):
+- `ActionBlock { kind: "action", id, phase, actionIds, repeat }` — `actionIds.length === 1` is a
+  mandatory step; `actionIds.length > 1` is a menu the player chooses from. `repeat` is `"once"` |
+  `"unlimited"` | `{ max?, maxEs?, bonusEs? }` — `max` for a fixed numeric cap (e.g. Marquise's 3
+  actions), `maxEs` free text for a cap that depends on game state (e.g. Alliance's "your number
+  of Officers"), `bonusEs` free text for bonus-granting rules (e.g. "+1 per Bird card spent")
+  rather than a structured numeric bonus model.
+- `DrivenActionBlock { kind: "driven", id, phase, translations, actionIds, onFailureBlocks? }` —
+  for a *forced*, not player-chosen, resolution over a dynamic set (so far only the Eyrie's
+  Decree: which action fires is dictated by external state, the count isn't a track number, and
+  failing triggers a mandatory branching consequence). `actionIds` lists the actions that could
+  be forced (for tip-targeting/hyperlinks); the prose in `translations` explains how the forcing
+  actually works rather than encoding it as rigid data — modeling it fully would make this a
+  rules engine, not a teaching aid. `onFailureBlocks` is a nested `GuideBlock[]` consequence
+  chain, rendered as a collapsible panel, not separately-navigable screens.
+- A guide's optional `variants: FactionVariant[]` covers a faction-level choice made once per
+  playthrough (Vagabond's character card, Eyrie's leader card) — see `PlayGuideWizard.tsx` above.
+- A guide's optional `modifiers: ActionModifier[]` is a catalog of toggleable partial tweaks to
+  one (or a few) specific actions — `{ id, targetActionId: string | string[], translations: {
+  [lang]: { name, appendBody } } }`. Unlike a `FactionVariant`, any number can be active
+  simultaneously: each just appends `appendBody` text under its target action(s) rather than
+  replacing them. A modifier becomes active either by direct player toggle — a picker renders
+  automatically when the guide sets `modifiersMaxActive` (e.g. Knaves draft exactly 3 of 12
+  Captain modifiers, each patching a different Item Action) — or by being bundled into a selected
+  `FactionVariant` via `variant.modifierIds` (e.g. Eyrie's Charismatic leader auto-applies its
+  Recruit-tweak modifier; use `actionOverrides` instead when a variant provides a wholly
+  different action, `modifierIds` when it just tweaks an existing one).
+- A guide's optional `notes: Partial<Record<LanguageCode, string[]>>` holds cross-faction or
+  passive-system callouts that aren't turn actions at all (e.g. Riverfolk's Buying Services
+  happens on *another* faction's Birdsong) — rendered on the faction overview page, not the wizard.
+
+Most factions' seemingly-dynamic mechanics (Duchy's Parliament, Keepers' Retinue, Twilight's
+Convene Woodfolk) turned out to fit a plain `ActionBlock` once the schema is read as *teaching*
+the rule rather than *enforcing* it: e.g. Duchy's Parliament is just `actionIds` listing all 9
+possible minister actions with `repeat: { maxEs: "once per sworn minister — you won't usually
+have all of them" }`; which ministers are actually sworn is real board state the player already
+tracks, not something the wiki needs to simulate. `DrivenActionBlock` stays reserved for the
+rarer case of a genuinely *forced* (not player-chosen) action — so far only the Eyrie's Decree.
+
+**Content location**: `game-content/<gameId>/` (sibling to `src/`, `prisma/`, `docs/`) —
+`concepts.json`, `translations/base-deck.json`, `faction-guides/*.json`, `faction-names.json`,
+`config.ts` (`BASE_LANGUAGE`/`DISPLAY_LANGUAGES`), and `rules-reference/` (my own written notes;
+any source rulebook PDF stays local, gitignored, never committed). **Not** documented in
+`docs/schema.md`/`api.md` beyond this section — those cover the codebase, not raw game content.
 
 ---
 

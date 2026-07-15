@@ -1,0 +1,112 @@
+[
+  {
+    "id": "clearing",
+    "translations": {
+      "en": { "name": "Clearing", "aliases": [] },
+      "es": {
+        "name": "Claro",
+        "aliases": ["clearings", "claros"],
+        "text": "Un claro es uno de los espacios del tablero donde se colocan guerreros, edificios y fichas. Cada claro tiene un palo (Zorro, Conejo o Ratón) que determina qué cartas se pueden usar para [[concept:craft|fabricar]] o construir ahí, y está conectado a otros claros por caminos."
+      }
+    }
+  },
+  {
+    "id": "supply",
+    "translations": {
+      "en": { "name": "Supply / Warriors", "aliases": [] },
+      "es": {
+        "name": "Suministro y guerreros",
+        "aliases": ["warriors", "guerreros", "reserva"],
+        "text": "El suministro es la reserva de guerreros de una facción fuera del tablero. Cuando una acción indica «coloca un guerrero», se toma del suministro."
+      }
+    }
+  },
+  {
+    "id": "building",
+    "translations": {
+      "en": { "name": "Building", "aliases": [] },
+      "es": {
+        "name": "Edificio",
+        "aliases": ["buildings", "edificios"],
+        "text": "Los edificios son piezas de cartón que pertenecen a una facción o secuaz, colocadas en un espacio de construcción libre de un [[concept:clearing|claro]]. Los edificios cuentan para determinar quién [[concept:ruler|gobierna]] ese claro."
+      }
+    }
+  },
+  {
+    "id": "token",
+    "translations": {
+      "en": { "name": "Token", "aliases": [] },
+      "es": {
+        "name": "Ficha",
+        "aliases": ["tokens", "fichas"],
+        "text": "Las fichas representan recursos o marcadores, como la madera o la simpatía de la Alianza. A diferencia de los [[concept:building|edificios]], las fichas no cuentan para determinar quién [[concept:ruler|gobierna]] un claro."
+      }
+    }
+  },
+  {
+    "id": "craft",
+    "translations": {
+      "en": { "name": "Craft / Crafting", "aliases": [] },
+      "es": {
+        "name": "Fabricar",
+        "aliases": ["crafting", "fabricacion", "fabricación"],
+        "text": "Fabricar consiste en activar piezas de fabricación (edificios, fichas u otros marcadores, según la facción) cuyo palo coincida con el coste impreso en la esquina inferior izquierda de la carta, para obtener su efecto: fichas de [[concept:item|objeto]], puntos de victoria, o un efecto persistente. Cada pieza de fabricación solo puede activarse una vez por turno. El palo con el que se fabrica una carta no limita dónde se puede usar su efecto después, salvo que el propio texto de la carta lo diga. Los objetos solo pueden fabricarse mientras queden fichas disponibles en el suministro de objetos del tablero."
+      }
+    }
+  },
+  {
+    "id": "battle",
+    "translations": {
+      "en": { "name": "Battle", "aliases": [] },
+      "es": {
+        "name": "Batalla",
+        "aliases": ["combat", "combate"],
+        "text": "El atacante tira los dos dados de combate. El resultado mayor se convierte en golpes contra el defensor, y el menor en golpes contra el propio atacante (en caso de empate, ambos infligen el mismo número). Cada bando está limitado por su número de guerreros en el claro. Si el defensor no tiene guerreros ahí, el atacante inflige un golpe extra automático. Ver también [[concept:ambush]]."
+      }
+    }
+  },
+  {
+    "id": "ambush",
+    "translations": {
+      "en": { "name": "Ambush", "aliases": ["ambush!"] },
+      "es": {
+        "name": "Emboscada",
+        "aliases": ["emboscar"],
+        "text": "Al comienzo de una [[concept:battle|batalla]], el defensor puede jugar una carta de Emboscada de un palo válido para dar 2 golpes inmediatos (no limitados por número de guerreros), y luego descartarla. El atacante puede cancelarla jugando su propia carta de Emboscada del mismo palo (o comodín). No se fabrica: se juega directamente desde la mano."
+      }
+    }
+  },
+  {
+    "id": "ruler",
+    "translations": {
+      "en": { "name": "Ruler / Priority", "aliases": ["priority"] },
+      "es": {
+        "name": "Gobernante",
+        "aliases": ["gobernar"],
+        "text": "Un jugador gobierna un claro si tiene más guerreros y [[concept:building|edificios]] combinados ahí que cualquier otro jugador. Las fichas y peones no cuentan para esto. En caso de empate, nadie gobierna el claro. Gobernar es necesario para construir y para muchos efectos de cartas."
+      }
+    }
+  },
+  {
+    "id": "item",
+    "translations": {
+      "en": { "name": "Item", "aliases": [] },
+      "es": {
+        "name": "Objeto",
+        "aliases": ["objetos"],
+        "text": "Los objetos son fichas obtenidas al [[concept:craft|fabricar]] ciertas cartas (Espada, Ballesta, Bolsa, Bota, Té, Moneda, Antorcha, Martillo). Solo pueden fabricarse mientras haya existencias disponibles en el suministro del tablero."
+      }
+    }
+  },
+  {
+    "id": "hand-of-cards",
+    "translations": {
+      "en": { "name": "Hand of cards", "aliases": ["hand"] },
+      "es": {
+        "name": "Mano de cartas",
+        "aliases": ["mano"],
+        "text": "Cada facción guarda su mano en secreto, aunque el número de cartas que tiene es información pública. Las cartas se gastan para [[concept:craft|fabricar]] o por su efecto directo (como [[concept:ambush]]), y muchas facciones deben descartar hasta un límite al final de su turno."
+      }
+    }
+  }
+]
