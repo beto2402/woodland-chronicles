@@ -769,7 +769,7 @@ export default function GroupLeaderboard({
           <div className="hero-sub">{groupName}</div>
           <div className="join-code">Join code: <span>{joinCode}</span></div>
           <Link className="hof-link" href={`/g/${joinCode}/hall-of-fame`}>🏛 Hall of Fame</Link>
-          <Link className="hof-link" href="/wiki">📖 Cómo jugar Root</Link>
+          <Link className="hof-link" href="/wiki">📖 How to play Root</Link>
         </div>
 
         <div className="container">

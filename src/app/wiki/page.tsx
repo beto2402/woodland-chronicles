@@ -1,7 +1,8 @@
-import { redirect } from "next/navigation";
+import { WikiEntry } from "@/components/wiki/WikiEntry";
 
-// Only one game exists today (see SUPPORTED_GAMES in src/lib/wiki/loaders.ts), so the wiki
-// root just goes straight to it rather than showing a real game-picker UI.
+// Only one game exists today (see SUPPORTED_GAMES in src/lib/wiki/loaders.ts). WikiEntry checks
+// for a previously-chosen display language and redirects straight to /wiki/root if found,
+// otherwise shows a one-time language picker first.
 export default function WikiRootPage() {
-  redirect("/wiki/root");
+  return <WikiEntry />;
 }

@@ -12,6 +12,11 @@ export const wikiStyles = `
   .wiki-back { display: inline-block; margin-bottom: 16px; font-size: 0.78rem; color: #8a9a7a; text-decoration: none; }
   .wiki-back:hover { color: #c9922a; }
 
+  .wiki-language-picker { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 12px; }
+  .wiki-language-option { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; color: #f2e8d0; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.85rem; padding: 12px 22px; }
+  .wiki-language-option:hover { border-color: #c9922a; color: #c9922a; }
+  .wiki-language-note { font-size: 0.75rem; color: #5a6a4a; }
+
   .wiki-combobox { position: relative; margin-bottom: 24px; }
   .wiki-combobox-input { width: 100%; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.95rem; padding: 11px 14px; outline: none; box-sizing: border-box; }
   .wiki-combobox-input:focus { border-color: #c9922a; }
