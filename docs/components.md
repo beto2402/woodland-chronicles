@@ -35,6 +35,7 @@ Belongs to the separate hidden Quinielas feature — see **`docs/quinielas.md`**
 
 ### `src/app/g/[joinCode]/hall-of-fame/HallOfFame.tsx` — Hall of Fame (client component)
 Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me` in one batch on mount; shows a spinner until they resolve (the "+ Record a Moment" button only appears once `me`+`roster` load and confirm membership). Sections, in order:
+Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me` in one batch on mount; shows a spinner until they resolve (the "+ Record a Moment" button only appears once `me`+`roster` load and confirm membership). Sections, in order:
 - **Moments** — cards (kind badge, title, game context, optional screenshot, description); creator can delete. Each moment has a `kind`: 🏅 Glory (smart play) or 🤡 Tard (dumb moment), chosen in the record form and shown as a colored left border + badge.
 - **Womp Womp Hall** — per-player count of games lost with exactly 29 points (derived from scores); count shown below the name, sorted high→low.
 - **Records** — Blowout (biggest 1st/2nd gap, derived from scores) and Biggest Crackhead (most games played).
@@ -91,6 +92,7 @@ The hero section has both a "🏛 Hall of Fame" link and a "📖 Cómo jugar Roo
 
 **Player Profile Modal** (`profileName` state — player name or null):
 - Opened by clicking a player's name in the leaderboard standings; closed via backdrop, ✕, or Escape (shares the Escape handler with the Faction Detail Modal). Reuses the `faction-modal` backdrop/card styles.
+- **Mobile scroll handling** (shared by both modals): while open, `document.body` overflow is locked (in the same effect as the Escape handler) so the page can't scroll behind it; the card uses `max-height: 100dvh` (dynamic viewport, with a `100vh` fallback) and `overscroll-behavior: contain`, and the ✕ button is `position: sticky` so it stays reachable while the card's own content scrolls.
 - **Group-scoped**: all stats come from this group's games + `groupElo` — no fetch, computed from the in-memory `leaderboard` entry (and `roster` for the avatar).
 - **Header**: avatar + name + sub-line. Avatar priority: claimed user's Google image (`player.claimedBy.image`, `referrerPolicy="no-referrer"`) → the player's **most-played faction portrait** (`FactionPortrait`) → a generic SVG silhouette placeholder (future custom avatars slot in here). Sub-line shows the Google display name, or "Unclaimed denizen".
 - **Stat grid** (6 cells): Games Played, Win Rate (+ win count), ELO (gold, with `~`/"prov." when `games < PROVISIONAL_THRESHOLD`), Most Played faction, Most Dominant faction, Most Noob faction. The three faction cells render `FactionPortrait` thumbnails.
@@ -113,7 +115,7 @@ The hero section has both a "🏛 Hall of Fame" link and a "📖 Cómo jugar Roo
 - `safePage = Math.min(gamesPage, totalPages - 1)` guards against out-of-range when page size changes
 
 **Page layout order (top to bottom):**
-1. Stats cards (Games Played, Denizens, Top Faction) — only shown when games exist; the Top Faction card gets the full flashy treatment (`.shimmer-card`: animated gold border, glint, pulsing glow — same as the loser banner). Followed by two award banners (each only with 2+ players): the **"Least Retarded" award** (`.champ-award`, understated calm-gold styling) for the highest-`groupElo` player (`topPlayer` = first leaderboard entry), then the **"Stupid Ass Nigga Award" award** (`.loser-award`, very flashy animated golden banner) for the lowest-`groupElo` player (`biggestLoser` = last leaderboard entry). All animations respect `prefers-reduced-motion`.
+1. Stats cards (Games Played, Denizens, Top Faction) — only shown when games exist; the Top Faction card gets the full flashy treatment (`.shimmer-card`: animated gold border, glint, pulsing glow — same as the loser banner). The card shows the faction(s) with the best **win rate** — matching the rankings modal's #1. On a tie it displays **all tied factions, separated by a long "/"** (`topFactionIds` = every faction whose rate equals the top rate, compared via cross-multiplication to dodge float-equality issues like 1/2 === 3/6), and the label becomes "Top Factions". The Top Faction card is a button (`showFactionRanking` state) that opens the **Faction Rankings modal** — all played factions ranked by win rate (`factionRanking`: per-faction `{games, wins, rate}`, sorted by rate desc with games as tiebreak), each row showing position, `FactionIcon`, name, win %, and `W/G`. Note the card itself still highlights the faction with the most *wins* (`topFactionId`), while the modal ranks by *rate*. Shares the `.faction-modal` styles, Escape handler, and body-scroll lock. Followed by two award banners (each only with 2+ players): the **"Least Retarded" award** (`.champ-award`, understated calm-gold styling) for the highest-`groupElo` **qualified** player (`topPlayer` = first `qualified` entry), then the **"Stupid Ass Nigga Award" award** (`.loser-award`, very flashy animated golden banner) for the lowest-`groupElo` **qualified** player (`biggestLoser` = last `qualified` entry). Both need 2+ qualified players. All animations respect `prefers-reduced-motion`.
 2. Join banner — only when signed in but not a member
 3. Roster management — only when `isMember`; collapsed behind "manage" toggle by default
 4. "Log a Battle" toggle button — only when `isMember`
@@ -126,8 +128,9 @@ Standings and Battle Log are wrapped in a `.main-grid`: a single stacked column 
 **Key derived state:**
 - `isMember`: `!!me && roster.some(r => r.player.claimedBy?.id === me.id)`
 - `rosterElo`: map from lowercased player name → `GroupPlayer.groupElo`
-- `playerStats`: per-player `{ wins, games, scoreSum, scoredGames, factions: Set<string>, factionDetail: Record<factionId, {games, wins}> }` — `avgScore` (`scoreSum / scoredGames`, or `null` if `scoredGames` is 0) is derived onto each `leaderboard` entry below
-- `leaderboard`: `playerStats` values with ELO attached, sorted by `groupElo` desc
+- `playerStats`: per-player `{ wins, games, factions: Set<string>, factionDetail: Record<factionId, {games, wins}> }`
+- `leaderboard`: `playerStats` values with ELO + `provisional` (`games < PROVISIONAL_THRESHOLD`, currently 5) attached. **Sort: qualified players (≥ threshold) always rank above provisional ones; within each tier, by `groupElo` desc.** So a low-sample player (e.g. 2/2 = 100%) can't hold a top spot.
+- `qualified`: leaderboard entries with `provisional === false`. The "Least Retarded"/"Stupid Ass Nigga" highlights and the `top-player` row styling are drawn from `qualified` (need 2+), so provisional players are never crowned or shamed.
 
 **CSS approach:** All styles live in a single `styles` string constant rendered via `<style>{styles}</style>`. No CSS modules. `html { font-size: 114% }` bumps the entire type scale up ~14%.
 

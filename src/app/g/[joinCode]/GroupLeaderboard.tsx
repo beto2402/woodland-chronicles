@@ -17,7 +17,7 @@ const VICTORY_EMOJI: Record<string, string> = {
   COALITION: "🤝",
 };
 const MAX_PLAYERS = 6;
-const PROVISIONAL_THRESHOLD = 3;
+const PROVISIONAL_THRESHOLD = 5;
 const emptyGameRow = () => ({ playerId: "", faction: "", score: "" });
 
 
@@ -186,6 +186,16 @@ const styles = `
   .stat-card { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 14px 12px; text-align: center; }
   .stat-card-value { font-family: 'Cinzel', serif; font-size: 1.6rem; color: #c9922a; font-weight: 700; line-height: 1; }
   .stat-card-label { font-size: 0.62rem; color: var(--accent-label); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
+  .stat-card-btn { width: 100%; font: inherit; cursor: pointer; display: block; }
+  .top-faction-icons { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 2px; }
+  .top-faction-icon { display: inline-flex; align-items: center; gap: 2px; }
+  .top-faction-slash { font-family: 'Cinzel', serif; font-size: 2.6rem; font-weight: 700; color: #f2e8d0; margin: 0 6px; line-height: 1; }
+  .faction-rank-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; margin-bottom: 6px; }
+  .faction-rank-pos { font-family: 'Cinzel', serif; font-size: 0.8rem; color: #5a6a4a; width: 20px; text-align: center; }
+  .faction-rank-name { flex: 1; font-size: 0.88rem; color: #f2e8d0; }
+  .faction-rank-stats { text-align: right; min-width: 96px; }
+  .faction-rank-pct { font-family: 'Cinzel', serif; font-size: 1rem; color: #c9922a; }
+  .faction-rank-sub { font-size: 0.66rem; color: #7a8a6a; }
 
   /* Sarcastic "Stupid Ass Nigga Award" award — very flashy: animated shiny golden border,
      a glint that sweeps across, a pulsing glow, bobbing trophies, gold gradient text. */
@@ -309,9 +319,9 @@ const styles = `
   .faction-detail-btn:hover { color: #c9922a; background: rgba(201,146,42,0.08); }
   .faction-count { font-size: 0.68rem; color: #5a6a4a; display: flex; align-items: center; gap: 4px; margin-top: 3px; }
 
-  .faction-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .faction-modal { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 6px; width: min(480px, 100%); max-height: calc(100vh - 64px); overflow-y: auto; padding: 24px 24px 20px; position: relative; }
-  .faction-modal-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: #5a6a4a; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 4px 8px; border-radius: 3px; transition: color 0.15s; }
+  .faction-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px; overscroll-behavior: contain; }
+  .faction-modal { background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 6px; width: min(480px, 100%); max-height: calc(100vh - 64px); max-height: calc(100dvh - 64px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 24px 24px 20px; position: relative; }
+  .faction-modal-close { position: sticky; top: 0; float: right; margin: -8px -6px 0 0; background: none; border: none; color: #5a6a4a; cursor: pointer; font-size: 1.1rem; line-height: 1; padding: 4px 8px; border-radius: 3px; transition: color 0.15s; z-index: 2; }
   .faction-modal-close:hover { color: #f2e8d0; }
   .faction-modal-title { font-family: 'Cinzel', serif; font-size: 1.1rem; color: #c9922a; margin-bottom: 2px; padding-right: 36px; }
   .faction-modal-sub { font-size: 0.62rem; color: var(--accent-label); letter-spacing: 0.2em; text-transform: uppercase; font-family: 'Cinzel', serif; margin-bottom: 18px; }
@@ -423,20 +433,29 @@ export default function GroupLeaderboard({
   const [pageSize, setPageSize] = useState(5);
   const [factionModal, setFactionModal] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
+  const [showFactionRanking, setShowFactionRanking] = useState(false);
 
   const isCoalition = victoryType === "Coalition";
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => {
-    if (!factionModal && !profileName) return;
+    if (!factionModal && !profileName && !showFactionRanking) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setFactionModal(null);
       setProfileName(null);
+      setShowFactionRanking(false);
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [factionModal, profileName]);
+    // Lock background scroll while a modal is open (prevents the page from
+    // scrolling behind the modal on mobile and pushing the close button away).
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [factionModal, profileName, showFactionRanking]);
   useEffect(() => {
     if (session) {
       fetch("/api/me").then((r) => r.ok ? r.json() : null).then(setMe);
@@ -708,21 +727,43 @@ export default function GroupLeaderboard({
       ...p,
       groupElo: rosterElo[p.name.toLowerCase()] ?? 1000,
       avgScore: p.scoredGames > 0 ? p.scoreSum / p.scoredGames : null,
+      provisional: p.games < PROVISIONAL_THRESHOLD,
     }))
-    .sort((a, b) => b.groupElo - a.groupElo);
+    // Qualified players (games ≥ threshold) always rank above provisional ones,
+    // so a low-sample player can't hold a top spot. Within each tier, sort by ELO.
+    .sort((a, b) => Number(a.provisional) - Number(b.provisional) || b.groupElo - a.groupElo);
 
-  // The lowest-ELO denizen — our (sarcastic) "Stupid Ass Nigga Award". Needs 2+ players to mean anything.
-  const biggestLoser = leaderboard.length >= 2 ? leaderboard[leaderboard.length - 1] : null;
-  // The highest-ELO denizen — the (less sarcastic) "Least Retarded". Needs 2+ players.
-  const topPlayer = leaderboard.length >= 2 ? leaderboard[0] : null;
+  // Highlights only consider qualified players, so a 2/2 newcomer isn't crowned.
+  const qualified = leaderboard.filter((p) => !p.provisional);
+  // The lowest-ELO denizen — our (sarcastic) "Stupid Ass Nigga Award". Needs 2+ qualified players.
+  const biggestLoser = qualified.length >= 2 ? qualified[qualified.length - 1] : null;
+  // The highest-ELO denizen — the (less sarcastic) "Least Retarded". Needs 2+ qualified players.
+  const topPlayer = qualified.length >= 2 ? qualified[0] : null;
 
   const factionWins: Record<string, number> = {};
+  const factionGames: Record<string, number> = {};
   for (const game of games) {
     for (const p of game.players) {
-      if (p.isWinner && p.faction) factionWins[p.faction] = (factionWins[p.faction] || 0) + 1;
+      if (!p.faction) continue;
+      factionGames[p.faction] = (factionGames[p.faction] || 0) + 1;
+      if (p.isWinner) factionWins[p.faction] = (factionWins[p.faction] || 0) + 1;
     }
   }
-  const topFactionId = Object.entries(factionWins).sort((a, b) => b[1] - a[1])[0]?.[0];
+  // All played factions ranked by win rate (games as tiebreak), for the ranking modal.
+  const factionRanking = Object.keys(factionGames)
+    .map((fid) => {
+      const g = factionGames[fid];
+      const w = factionWins[fid] || 0;
+      return { fid, games: g, wins: w, rate: g > 0 ? w / g : 0 };
+    })
+    .sort((a, b) => b.rate - a.rate || b.games - a.games);
+  // Top faction(s) = everyone tied for the best win rate (matches the rankings modal's #1).
+  // Tie compared via cross-multiplication to avoid float equality issues (1/2 === 3/6).
+  const topRate = factionRanking[0]?.rate ?? 0;
+  const topFactionIds = topRate > 0
+    ? factionRanking.filter((f) => f.wins * factionRanking[0].games === factionRanking[0].wins * f.games).map((f) => f.fid)
+    : [];
+  const topFactionId = topFactionIds[0];
   const topFaction = topFactionId ? FACTION_MAP[topFactionId] : null;
 
   const isMember = !!me && roster.some((r) => r.player.claimedBy?.id === me.id);
@@ -792,10 +833,29 @@ export default function GroupLeaderboard({
                   <div className="stat-card-value">{leaderboard.length}</div>
                   <div className="stat-card-label">Denizens</div>
                 </div>
-                <div className={`stat-card${topFaction ? " shimmer-card" : ""}`}>
-                  <div className="stat-card-value">{topFaction && topFactionId ? <FactionIcon id={topFactionId} size={60} /> : "—"}</div>
-                  <div className="stat-card-label">{topFaction ? "Top Faction" : "No Data"}</div>
-                </div>
+                {topFaction ? (
+                  <button
+                    type="button"
+                    className="stat-card shimmer-card stat-card-btn"
+                    onClick={() => setShowFactionRanking(true)}
+                    title="See faction win-rate rankings"
+                  >
+                    <div className="stat-card-value top-faction-icons">
+                      {topFactionIds.map((fid, i) => (
+                        <span key={fid} className="top-faction-icon">
+                          {i > 0 && <span className="top-faction-slash">/</span>}
+                          <FactionIcon id={fid} size={60} />
+                        </span>
+                      ))}
+                    </div>
+                    <div className="stat-card-label">{topFactionIds.length > 1 ? "Top Factions" : "Top Faction"}</div>
+                  </button>
+                ) : (
+                  <div className="stat-card">
+                    <div className="stat-card-value">—</div>
+                    <div className="stat-card-label">No Data</div>
+                  </div>
+                )}
               </div>
               {topPlayer && (
                 <div className="champ-award">
@@ -1109,7 +1169,7 @@ export default function GroupLeaderboard({
               <div className="empty-state">No battles recorded yet. Log a game to begin.</div>
             ) : (
               leaderboard.map((p, i) => (
-                <div key={p.name} className={`lb-row ${i === 0 ? "top-player" : ""}`}>
+                <div key={p.name} className={`lb-row ${topPlayer && p.name === topPlayer.name ? "top-player" : ""}`}>
                   <span className={`rank rank-${i + 1}`}>{i + 1}</span>
                   <div className="player-info">
                     <button className="player-name-btn" onClick={() => setProfileName(p.name)} title="View profile">{p.name}</button>
@@ -1279,6 +1339,34 @@ export default function GroupLeaderboard({
           )}
         </div>
       </div>
+
+      {showFactionRanking && (
+        <div className="faction-modal-backdrop" onClick={() => setShowFactionRanking(false)}>
+          <div className="faction-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="faction-modal-close" onClick={() => setShowFactionRanking(false)}>✕</button>
+            <div className="faction-modal-title">Faction Rankings</div>
+            <div className="faction-modal-sub">By Win Rate</div>
+            {factionRanking.length === 0 ? (
+              <div className="empty-state">No faction data yet.</div>
+            ) : (
+              factionRanking.map((f, i) => {
+                const fac = FACTION_MAP[f.fid];
+                return (
+                  <div key={f.fid} className="faction-rank-row">
+                    <span className="faction-rank-pos">{i + 1}</span>
+                    <FactionIcon id={f.fid} size={30} />
+                    <span className="faction-rank-name">{fac?.name ?? f.fid}</span>
+                    <span className="faction-rank-stats">
+                      <div className="faction-rank-pct">{Math.round(f.rate * 100)}%</div>
+                      <div className="faction-rank-sub">{f.wins}W / {f.games}G</div>
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       {factionModal && (() => {
         const entry = leaderboard.find((x) => x.name === factionModal);
