@@ -1,0 +1,251 @@
+{
+  "codebreakers": {
+    "crafting_requirements": {
+      "mouse": 2
+    },
+    "translations": {
+      "esp": {
+        "name": "Rompecódigos",
+        "translation": "Una vez en tu Día, puedes mirar la mano de otro jugador."
+      }
+    }
+  },
+  "scouting party": {
+    "crafting_requirements": {
+      "mouse": 2
+    },
+    "translations": {
+      "esp": {
+        "name": "Batidores",
+        "translation": "Como atacante en batalla, no te afectan las cartas de emboscada."
+      }
+    }
+  },
+  "crossbow": {
+    "crafting_requirements": {
+      "fox": 1
+    },
+    "translations": {
+      "esp": {
+        "name": "Ballesta",
+        "translation": "Ballesta"
+      }
+    }
+  },
+  "sword": {
+    "crafting_requirements": { "fox": 2 },
+    "translations": { "esp": { "name": "Espada", "translation": "Espada" } }
+  },
+  "investments (EN unverified)": {
+    "crafting_requirements": { "rabbit": 2 },
+    "translations": { "esp": { "name": "Inversiones", "translation": "Inversiones" } }
+  },
+  "traveling gear (EN unverified)": {
+    "crafting_requirements": { "rabbit": 1 },
+    "translations": { "esp": { "name": "Equipo de viaje", "translation": "Equipo de viaje" } }
+  },
+  "root tea (EN unverified)": {
+    "crafting_requirements": { "mouse": 1 },
+    "translations": { "esp": { "name": "Té de Raíces", "translation": "Té de Raíces" } }
+  },
+  "informant (EN unverified)": {
+    "crafting_requirements": { "mouse": 1 },
+    "translations": { "esp": { "name": "Infiltrado", "translation": "Infiltrado" } }
+  },
+  "bird bindle (EN unverified)": {
+    "crafting_requirements": { "mouse": 1 },
+    "translations": { "esp": { "name": "Hatillo Pajarero", "translation": "Hatillo Pajarero" } }
+  },
+  "smugglers (EN unverified)": {
+    "crafting_requirements": { "mouse": 1 },
+    "translations": { "esp": { "name": "Contrabandistas", "translation": "Contrabandistas" } }
+  },
+  "gently used knapsack": {
+    "crafting_requirements": { "mouse": 1 },
+    "translations": { "esp": { "name": "Bolsa Usada", "translation": "Bolsa Usada" } }
+  },
+  "anvil (EN unverified)": {
+    "crafting_requirements": { "fox": 1 },
+    "translations": { "esp": { "name": "Yunque", "translation": "Yunque" } }
+  },
+  "tax collector (EN unverified)": {
+    "crafting_requirements": { "fox": 1, "rabbit": 1, "mouse": 1 },
+    "translations": {
+      "esp": {
+        "name": "Recaudador",
+        "translation": "Una vez durante tu Día, puedes retirar a uno de tus guerreros para robar una carta."
+      }
+    }
+  },
+  "brutal tactics (EN unverified)": {
+    "crafting_requirements": { "fox": 2 },
+    "translations": {
+      "esp": {
+        "name": "Tácticas Brutales",
+        "translation": "Como atacante en batalla, puedes dar 1 golpe adicional, pero el defensor gana 1 punto."
+      }
+    }
+  },
+  "ready to fight (EN unverified)": {
+    "crafting_requirements": { "mouse": 3 },
+    "translations": {
+      "esp": {
+        "name": "Listo para Luchar",
+        "translation": "En tu Alba, puedes coger una carta al azar de otro jugador. Ese jugador obtiene 1 punto."
+      }
+    }
+  },
+  "sappers (EN unverified)": {
+    "crafting_requirements": { "mouse": 1 },
+    "translations": {
+      "esp": {
+        "name": "Zapadores",
+        "translation": "Como defensor en batalla, puedes descartar esta carta para dar un golpe adicional."
+      }
+    }
+  },
+  "cobbler (EN unverified)": {
+    "crafting_requirements": { "rabbit": 2 },
+    "translations": {
+      "esp": {
+        "name": "Zapatero",
+        "translation": "Al comienzo de tu Noche, puedes hacer un movimiento."
+      }
+    }
+  },
+  "command warren (EN unverified)": {
+    "crafting_requirements": { "rabbit": 2 },
+    "translations": {
+      "esp": {
+        "name": "Comandancia",
+        "translation": "Al comienzo de tu Día, puedes iniciar una batalla."
+      }
+    }
+  },
+  "armorers": {
+    "crafting_requirements": { "fox": 1 },
+    "translations": {
+      "esp": {
+        "name": "Pertrechados",
+        "translation": "En batalla, puedes descartar esta carta para ignorar todos los golpes recibidos."
+      }
+    }
+  },
+  "better burrow bank": {
+    "crafting_requirements": { "rabbit": 2 },
+    "translations": {
+      "esp": {
+        "name": "Banco Madriguera",
+        "translation": "Al comienzo de tu Alba, otro jugador y tú robáis una carta."
+      }
+    }
+  },
+  "favor of the mice": {
+    "crafting_requirements": { "mouse": 3 },
+    "translations": {
+      "esp": {
+        "name": "Favor de los Ratones",
+        "translation": "Quita todas las piezas enemigas de todos los claros de ratón, y descarta esta carta."
+      }
+    }
+  },
+  "favor of the rabbits": {
+    "crafting_requirements": { "rabbit": 3 },
+    "translations": {
+      "esp": {
+        "name": "Favor de los Conejos",
+        "translation": "Quita todas las piezas enemigas de todos los claros de conejo, y descarta esta carta."
+      }
+    }
+  },
+  "favor of the foxes": {
+    "crafting_requirements": { "fox": 3 },
+    "translations": {
+      "esp": {
+        "name": "Favor de los Zorros",
+        "translation": "Quita todas las piezas enemigas de todos los claros de zorro, y descarta esta carta."
+      }
+    }
+  },
+  "royal claim (EN unverified)": {
+    "crafting_requirements": { "any": 4 },
+    "translations": {
+      "esp": {
+        "name": "Derecho al Trono",
+        "translation": "En tu Alba, puedes descartar esta carta para obtener un punto por cada claro que gobiernes."
+      }
+    }
+  },
+  "ambush! (rabbit)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Emboscada (conejo)",
+        "translation": "Puedes emboscar sólo en claros de conejo. Al comienzo de la batalla, el defensor puede jugar esta carta para dar dos golpes inmediatos, y luego descartarla. Se cancela si el atacante juega una emboscada correspondiente."
+      }
+    }
+  },
+  "ambush! (fox)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Emboscada (zorro)",
+        "translation": "Puedes emboscar sólo en claros de zorro. Al comienzo de la batalla, el defensor puede jugar esta carta para dar dos golpes inmediatos, y luego descartarla. Se cancela si el atacante juega una emboscada correspondiente."
+      }
+    }
+  },
+  "ambush! (mouse)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Emboscada (ratón)",
+        "translation": "Puedes emboscar sólo en claros de ratón. Al comienzo de la batalla, el defensor puede jugar esta carta para dar dos golpes inmediatos, y luego descartarla. Se cancela si el atacante juega una emboscada correspondiente."
+      }
+    }
+  },
+  "ambush! (bird)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Emboscada (comodín)",
+        "translation": "Puedes emboscar en cualquier claro. Al comienzo de la batalla, el defensor puede jugar esta carta para dar dos golpes inmediatos, y luego descartarla. Se cancela si el atacante juega una emboscada correspondiente."
+      }
+    }
+  },
+  "dominance (rabbit)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Dominancia (conejo)",
+        "translation": "Si tienes al menos 10 puntos, actívala durante tu Día colocándola en tu área de juego y retira tu marcador de puntuación — ya no puedes anotar puntos de la forma habitual. Ganas la partida de inmediato si gobiernas tres claros de conejo al comienzo de tu Alba. Si eres el Vagabundo, y hay cuatro o más jugadores, puedes formar una coalición."
+      }
+    }
+  },
+  "dominance (mouse)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Dominancia (ratón)",
+        "translation": "Si tienes al menos 10 puntos, actívala durante tu Día colocándola en tu área de juego y retira tu marcador de puntuación — ya no puedes anotar puntos de la forma habitual. Ganas la partida de inmediato si gobiernas tres claros de ratón al comienzo de tu Alba. Si eres el Vagabundo, y hay cuatro o más jugadores, puedes formar una coalición."
+      }
+    }
+  },
+  "dominance (fox)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Dominancia (zorro)",
+        "translation": "Si tienes al menos 10 puntos, actívala durante tu Día colocándola en tu área de juego y retira tu marcador de puntuación — ya no puedes anotar puntos de la forma habitual. Ganas la partida de inmediato si gobiernas tres claros de zorro al comienzo de tu Alba. Si eres el Vagabundo, y hay cuatro o más jugadores, puedes formar una coalición."
+      }
+    }
+  },
+  "dominance (bird) (EN unverified)": {
+    "crafting_requirements": null,
+    "translations": {
+      "esp": {
+        "name": "Dominancia (claros opuestos)",
+        "translation": "Si tienes al menos 10 puntos, actívala durante tu Día colocándola en tu área de juego y retira tu marcador de puntuación — ya no puedes anotar puntos de la forma habitual. Ganas la partida de inmediato si gobiernas dos claros en esquinas opuestas al comienzo de tu Alba. Si eres el Vagabundo, y hay cuatro o más jugadores, puedes formar una coalición."
+      }
+    }
+  }
+}

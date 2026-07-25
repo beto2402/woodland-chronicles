@@ -1,0 +1,134 @@
+{
+  "factionId": "lizard",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "El Culto de los Lagartos gira en torno al Paria: el palo que más veces aparece en su Pila de Almas Perdidas (todo lo que gastan o descartan, incluidas cartas de Dominancia). El Paria cambia cada Alba, y sus rituales solo funcionan en claros de ese palo — más baratos si el Paria está en su lado de Odio."
+    }
+  },
+  "actions": {
+    "adjust-outcast": {
+      "translations": {
+        "es": {
+          "title": "Ajustar el Paria",
+          "body": "Mira tu Pila de Almas Perdidas: el palo más representado (sin contar Pájaro) se convierte en el nuevo Paria. Si hay empate, el marcador se queda donde está pero pasa a su lado de Odio (si no lo estaba ya). Si el palo ya era el Paria, también pasa a Odio."
+        }
+      }
+    },
+    "discard-lost-souls": {
+      "translations": {
+        "es": {
+          "title": "Descartar Almas Perdidas",
+          "body": "Descarta toda la Pila de Almas Perdidas."
+        }
+      }
+    },
+    "crusade": {
+      "translations": {
+        "es": {
+          "title": "Cruzada",
+          "body": "Gasta 2 Acólitos (1 menos si el Paria está en Odio) para mover guerreros (al menos 1) desde o hacia un claro del palo Paria, o para iniciar una [[concept:battle|batalla]] ahí; si mueves, puedes batallar después en el destino."
+        }
+      }
+    },
+    "convert": {
+      "translations": {
+        "es": {
+          "title": "Convertir",
+          "body": "Gasta 2 Acólitos (1 menos si el Paria está en Odio) para sustituir un guerrero enemigo en un claro del palo Paria por un guerrero del Culto."
+        }
+      }
+    },
+    "sanctify": {
+      "translations": {
+        "es": {
+          "title": "Consagrar",
+          "body": "Gasta 3 Acólitos (1 menos si el Paria está en Odio) para sustituir un edificio enemigo en un claro del palo Paria por un Jardín de ese palo."
+        }
+      }
+    },
+    "build": {
+      "translations": {
+        "es": {
+          "title": "Construir",
+          "body": "Revela una carta. En un claro que gobiernes cuyo palo coincida con ella, coloca un Jardín de ese palo."
+        }
+      }
+    },
+    "recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Revela una carta. En un claro cuyo palo coincida con ella, coloca un guerrero."
+        }
+      }
+    },
+    "score": {
+      "translations": {
+        "es": {
+          "title": "Anotar",
+          "body": "Revela y gasta una carta (va a Almas Perdidas) para anotar los puntos de victoria del espacio de Jardines más a la derecha del palo de esa carta. Solo puedes hacerlo una vez por turno por cada palo."
+        }
+      }
+    },
+    "sacrifice": {
+      "translations": {
+        "es": {
+          "title": "Sacrificar",
+          "body": "Revela una carta de Pájaro (es obligatorio que sea de Pájaro) para colocar un guerrero en la casilla de Acólitos."
+        }
+      }
+    },
+    "return-revealed-cards": {
+      "translations": {
+        "es": {
+          "title": "Recoger cartas reveladas",
+          "body": "Devuelve a tu mano todas las cartas que hayas revelado este turno."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con Jardines",
+          "body": "Activa tus Jardines cuyo palo coincida con el Paria actual para [[concept:craft|fabricar]] cartas de tu mano."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 adicional por cada icono de bonificación de robo que hayas descubierto en tu tablero de facción."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["adjust-outcast"], "repeat": "once" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["discard-lost-souls"], "repeat": "once" },
+    { "kind": "action", "id": "b3", "phase": "birdsong", "actionIds": ["crusade", "convert", "sanctify"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b4", "phase": "daylight", "actionIds": ["build", "recruit", "score", "sacrifice"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["return-revealed-cards"], "repeat": "once" },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["craft"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b7", "phase": "evening", "actionIds": ["draw"], "repeat": "once" },
+    { "kind": "action", "id": "b8", "phase": "evening", "actionIds": ["discard"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "Odio a los Pájaros: para el Culto, las cartas de Pájaro NO son comodín en sus propios rituales.",
+      "Venganza: los guerreros del Culto que pierdes defendiendo no vuelven a tu suministro — se convierten en Acólitos.",
+      "Peregrinos: el Culto gobierna cualquier claro donde tenga al menos un Jardín, sin importar el recuento de guerreros+edificios (esto tiene prioridad incluso sobre los Señores del Bosque de las Dinastías).",
+      "Temor de los Fieles: cada vez que te retiran un Jardín, descartas una carta al azar.",
+      "La Pila de Almas Perdidas: ahí van todas las cartas gastadas o descartadas por el Culto (incluidas las de Dominancia) — es la que determina el Paria cada Alba."
+    ]
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "factionId": "marquise",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "La Marquesa de los Gatos es la facción recomendada para tu primera partida: su turno es lineal y no tiene mecánicas ocultas."
+    }
+  },
+  "actions": {
+    "produce-wood": {
+      "translations": {
+        "es": {
+          "title": "Producir madera",
+          "body": "En cada [[concept:clearing|claro]] con una o más Serrerías, coloca esa cantidad de fichas de madera."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con Talleres",
+          "body": "Activa tus Talleres para [[concept:craft|fabricar]] cartas de tu mano."
+        }
+      }
+    },
+    "battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Inicia una [[concept:battle|batalla]] en un claro con guerreros tuyos y de un rival."
+        }
+      }
+    },
+    "march": {
+      "translations": {
+        "es": {
+          "title": "Marchar",
+          "body": "Toma hasta dos movimientos. En cada uno, mueve cualquier cantidad de guerreros de un claro a un claro adyacente conectado; debes gobernar el claro de origen, el de destino, o ambos."
+        }
+      }
+    },
+    "recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Coloca 1 guerrero en cada claro con un Reclutador. Solo puedes tomar esta acción una vez por turno."
+        }
+      }
+    },
+    "build": {
+      "translations": {
+        "es": {
+          "title": "Construir",
+          "body": "Elige un claro que gobiernes con un espacio de construcción libre, y elige Serrería, Taller o Reclutador (el siguiente disponible de ese tipo en tu tablero de facción). Paga su coste en madera, tomándola de ese claro, de claros adyacentes que gobiernes, o de claros conectados a través de claros que gobiernes. Coloca el edificio y anota los puntos de victoria mostrados en el espacio destapado."
+        }
+      }
+    },
+    "overwork": {
+      "translations": {
+        "es": {
+          "title": "Sobrelaborar",
+          "body": "Gasta una carta cuyo palo coincida con el de un claro con una Serrería, para colocar una ficha de madera ahí."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 adicional por cada icono de bonificación de robo que hayas descubierto en tu tablero de facción."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["produce-wood"], "repeat": "once" },
+    { "kind": "action", "id": "b2", "phase": "daylight", "actionIds": ["craft"], "repeat": "unlimited" },
+    {
+      "kind": "action",
+      "id": "b3",
+      "phase": "daylight",
+      "actionIds": ["battle", "march", "recruit", "build", "overwork"],
+      "repeat": { "max": 3, "bonusEs": "+1 acción por cada carta de Pájaro que gastes (no cuenta como una de las acciones)" }
+    },
+    { "kind": "action", "id": "b4", "phase": "evening", "actionIds": ["draw"], "repeat": "once" },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["discard"], "repeat": "once" }
+  ]
+}

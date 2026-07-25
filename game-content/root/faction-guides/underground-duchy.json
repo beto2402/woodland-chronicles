@@ -1,0 +1,200 @@
+{
+  "factionId": "duchy",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "El Ducado Subterráneo gobierna desde la Madriguera (un espacio especial siempre suyo) y persuade Ministros para sumar sus habilidades a las propias. Cuantos más Ministros tenga jurados, más acciones distintas podrá tomar cada Día."
+    }
+  },
+  "actions": {
+    "birdsong-recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar en la Madriguera",
+          "body": "Coloca 1 guerrero, más 1 guerrero adicional por cada icono de guerrero visible en tu tablero, en la Madriguera."
+        }
+      }
+    },
+    "build": {
+      "translations": {
+        "es": {
+          "title": "Construir",
+          "body": "Revela 1 carta para colocar una Ciudadela o un Mercado en un claro que gobiernes cuyo palo coincida."
+        }
+      }
+    },
+    "assembly-recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Coloca 1 guerrero en la Madriguera."
+        }
+      }
+    },
+    "move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Toma un movimiento."
+        }
+      }
+    },
+    "battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Inicia una [[concept:battle|batalla]]."
+        }
+      }
+    },
+    "dig": {
+      "translations": {
+        "es": {
+          "title": "Excavar",
+          "body": "Gasta 1 carta para colocar un Túnel en un claro sin Túnel cuyo palo coincida (si ya hay 3 Túneles en el mapa, puedes retirar uno antes). Después, mueve hasta 4 guerreros (al menos 1) de la Madriguera a ese claro."
+        }
+      }
+    },
+    "foremole": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Topo Mayor",
+          "body": "Revela cualquier carta para colocar una Ciudadela o Mercado en cualquier claro que gobiernes (el palo no tiene que coincidir)."
+        }
+      }
+    },
+    "captain": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Capitana",
+          "body": "Inicia una [[concept:battle|batalla]]."
+        }
+      }
+    },
+    "marshal": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Mariscal",
+          "body": "Toma un movimiento."
+        }
+      }
+    },
+    "brigadier": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Brigadier",
+          "body": "Toma hasta dos movimientos, o hasta dos batallas (elige una de las dos opciones)."
+        }
+      }
+    },
+    "banker": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Banquera",
+          "body": "Gasta cualquier cantidad de cartas del mismo palo para anotar esa cantidad de puntos de victoria."
+        }
+      }
+    },
+    "mayor": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Alcaldesa",
+          "body": "Toma la acción de cualquier otro Ministro (noble o escudero) que ya tengas jurado."
+        }
+      }
+    },
+    "duchess-of-mud": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Duquesa del Lodo",
+          "body": "Anota 2 puntos de victoria si los tres Túneles están en el mapa."
+        }
+      }
+    },
+    "baron-of-dirt": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Barón de la Tierra",
+          "body": "Anota 1 punto de victoria por cada Mercado en el mapa."
+        }
+      }
+    },
+    "earl-of-stone": {
+      "translations": {
+        "es": {
+          "title": "Ministro: Conde de Piedra",
+          "body": "Anota 1 punto de victoria por cada Ciudadela en el mapa."
+        }
+      }
+    },
+    "sway": {
+      "translations": {
+        "es": {
+          "title": "Persuadir",
+          "body": "Elige una carta de Ministro sin jurar que requiera una corona de rango que ya tengas. Revela cartas —una por cada claro con piezas tuyas cuyo palo coincida con el Ministro, hasta el número impreso en su carta. Jura al Ministro: coloca su corona y anota los puntos de victoria indicados."
+        }
+      }
+    },
+    "discard-and-return-cards": {
+      "translations": {
+        "es": {
+          "title": "Descartar y recoger cartas reveladas",
+          "body": "Descarta las cartas de Pájaro que hayas revelado este turno. Devuelve a tu mano el resto de las cartas reveladas."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con Ciudadelas y Mercados",
+          "body": "Activa tus Ciudadelas y Mercados para [[concept:craft|fabricar]] cartas de tu mano."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 adicional por cada icono de bonificación de robo que hayas descubierto en tu tablero de facción."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["birdsong-recruit"], "repeat": "once" },
+    {
+      "kind": "action",
+      "id": "b2",
+      "phase": "daylight",
+      "actionIds": ["build", "assembly-recruit", "move", "battle", "dig"],
+      "repeat": { "max": 2 }
+    },
+    {
+      "kind": "action",
+      "id": "b3",
+      "phase": "daylight",
+      "actionIds": ["foremole", "captain", "marshal", "brigadier", "banker", "mayor", "duchess-of-mud", "baron-of-dirt", "earl-of-stone"],
+      "repeat": { "maxEs": "una vez por cada Ministro que hayas jurado, en cualquier orden (normalmente no tendrás todos disponibles a la vez)" }
+    },
+    { "kind": "action", "id": "b4", "phase": "daylight", "actionIds": ["sway"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["discard-and-return-cards"], "repeat": "once" },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["craft"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b7", "phase": "evening", "actionIds": ["draw"], "repeat": "once" },
+    { "kind": "action", "id": "b8", "phase": "evening", "actionIds": ["discard"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "La Madriguera: ningún guerrero, edificio o ficha que no sea del Ducado puede entrar ahí, y el Ducado la gobierna siempre, incluso vacía.",
+      "El Precio del Fracaso: si el Ducado pierde algún edificio, debe devolver su Ministro jurado de mayor rango y descartar una carta al azar.",
+      "Túneles: solo puede haber 3 en el mapa a la vez; para colocar uno nuevo estando al límite, primero hay que retirar uno."
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "tips": [
+    {
+      "gameId": "root",
+      "key": "marquise-avoid-unnecessary-battle",
+      "text": "No busques el combate por el combate: cada batalla desgasta guerreros de ambos bandos. Antes de atacar, pregúntate si construir, reclutar o expandirte te acerca más a la victoria que pelear.",
+      "targets": [{ "factionId": "marquise", "actionId": "battle" }]
+    },
+    {
+      "gameId": "root",
+      "key": "marquise-prioritize-sawmills",
+      "text": "Prioriza construir Serrerías pronto: más madera cada Canto del Alba significa poder construir más rápido en los turnos siguientes.",
+      "targets": [{ "factionId": "marquise", "actionId": "build" }]
+    },
+    {
+      "gameId": "root",
+      "key": "marquise-spread-buildings",
+      "text": "Reparte tus edificios en varios claros en vez de acumularlos: si un rival destruye tu única Serrería o Reclutador, pierdes de golpe toda esa producción.",
+      "targets": [{ "factionId": "marquise", "actionId": "build" }]
+    },
+    {
+      "gameId": "root",
+      "key": "marquise-craft-before-discard",
+      "text": "Si te acercas al límite de 5 cartas en mano, gasta las que no necesites fabricando antes de la Noche, para no perderlas al descartar sin obtener nada a cambio.",
+      "targets": [{ "factionId": "marquise", "actionId": "craft" }]
+    },
+    {
+      "gameId": "root",
+      "key": "alliance-train-tradeoff",
+      "text": "Cuantos más guerreros conviertas en Oficiales con Adiestrar, menos guerreros normales te quedan para proteger tus Bases o expandir tu Simpatía — no te excedas.",
+      "targets": [{ "factionId": "alliance", "actionId": "train" }]
+    },
+    {
+      "gameId": "root",
+      "key": "eyrie-decree-battle-caution",
+      "text": "El Decreto es obligatorio: si añades muchas cartas a la columna Batallar, estarás forzada a pelear esas veces sí o sí. No añadas más de las que estés dispuesta a cumplir, o arriesgas caer en Disturbios.",
+      "targets": [{ "factionId": "eyrie", "actionId": "battle" }]
+    },
+    {
+      "gameId": "root",
+      "key": "eyrie-avoid-turmoil",
+      "text": "Caer en Disturbios es muy costoso: pierdes puntos, descartas casi todo el Decreto y puede que cambies de líder sin quererlo. Antes de añadir una carta a una columna, pregúntate si realmente vas a poder completar esa acción cuando llegue el momento de resolver el Decreto.",
+      "targets": [{ "factionId": "eyrie", "actionId": "add-to-decree" }]
+    },
+    {
+      "gameId": "root",
+      "key": "vagabond-repair-before-rest",
+      "text": "Solo recuperas objetos dañados en tu Noche si estás en un bosque. Si no vas a terminar el turno en uno, considera usar Reparar durante el Día para no quedarte sin objetos útiles.",
+      "targets": [{ "factionId": "vagabond", "actionId": "repair" }]
+    },
+    {
+      "gameId": "root",
+      "key": "riverfolk-spend-funds-freely",
+      "text": "Recuperas todos tus fondos cada Alba (Recaudar fondos los devuelve todos a la casilla de Fondos). No temas comprometerlos a fondo cada Día: guardarlos sin usar no te da nada.",
+      "targets": [{ "factionId": "riverfolk", "actionId": "gather-funds" }]
+    },
+    {
+      "gameId": "root",
+      "key": "lizard-influence-outcast",
+      "text": "Tú decides qué cartas gastas y descartas, y eso es lo que llena tu Pila de Almas Perdidas. Puedes planear con antelación qué palo quieres que sea el próximo Paria, en vez de que te sorprenda.",
+      "targets": [{ "factionId": "lizard", "actionId": "adjust-outcast" }]
+    },
+    {
+      "gameId": "root",
+      "key": "duchy-sway-cheap-ministers-first",
+      "text": "Persuadir a un Ministro cuesta revelar cartas y no siempre acaba en gran cosa, pero cada Ministro jurado te da una acción extra cada Día para el resto de la partida. Prioriza los que puedas jurar cómodamente con tu posición actual en el mapa.",
+      "targets": [{ "factionId": "duchy", "actionId": "sway" }]
+    },
+    {
+      "gameId": "root",
+      "key": "keepers-count-clearings-before-risking",
+      "text": "Antes de Excavar o Recuperar, cuenta cuántos claros del palo necesario gobiernas de verdad. Si son menos que el valor de la reliquia, pierdes la carta del Retinue usada sin ganar nada — a veces es mejor esperar a gobernar más claros primero.",
+      "targets": [{ "factionId": "keepers", "actionId": "retinue-battle-delve" }]
+    },
+    {
+      "gameId": "root",
+      "key": "twilight-save-a-bird-card",
+      "text": "Solo las cartas de Pájaro que devuelvas en Convocar al Pueblo del Bosque te dejan usar Empoderar. Si quieres esa opción en tu Noche, guarda alguna carta de Pájaro sin revelar durante tu Alba.",
+      "targets": [{ "factionId": "twilight", "actionId": "empower" }]
+    },
+    {
+      "gameId": "root",
+      "key": "knaves-forest-choice-matters",
+      "text": "Si tu Capitán no está en el mapa al Preparar, tú eliges en qué bosque reaparece — y quedar en un bosque te limita a 3 acciones en vez de 4 ese turno. Piensa bien esa elección, no la trates como un trámite.",
+      "targets": [{ "factionId": "knaves", "actionId": "ready" }]
+    }
+  ]
+}

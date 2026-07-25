@@ -56,3 +56,14 @@ Project docs live in `docs/`. **Update the relevant doc file(s) whenever you mak
 - `docs/components.md` — pages, components, lib files, and their behavior
 
 Keep docs accurate and current. Do not leave them describing behavior that no longer exists.
+
+## Quinielas is a separate app sharing this DB — not in scope above
+
+`Match` and `QuinielaPick` (and the `MatchStage`/`DecidedBy`/`MatchSlot` enums) in
+`prisma/schema.prisma`, `src/app/quinielas/`, `src/app/api/quinielas/`, and `src/lib/quinielas.ts`
+belong to a hidden World Cup prediction pool that is **unrelated to the Root leaderboard app**
+described above — it only shares this repo/database for hosting convenience. Its only link to
+the rest of the schema is `QuinielaPick.userId` → the real `User` table.
+
+Don't describe it in `docs/schema.md`/`api.md`/`components.md`, and don't factor it into
+decisions about the Root app's data model. It has its own doc: **`docs/quinielas.md`**.

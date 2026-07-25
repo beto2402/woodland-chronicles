@@ -53,6 +53,7 @@ const styles = `
   .join-code span { color: #c9922a; letter-spacing: 0.25em; }
   .hof-link { display: inline-block; margin-top: 12px; font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.12em; color: #c9922a; text-decoration: none; border: 1px solid #2d3b2d; border-radius: 4px; padding: 5px 12px; transition: all 0.15s; }
   .hof-link:hover { background: rgba(201,146,42,0.1); border-color: #c9922a; }
+  .hof-link + .hof-link { margin-left: 8px; }
 
   .container { max-width: 780px; margin: 0 auto; padding: 0 16px; }
   .section-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--accent-label); text-transform: uppercase; margin: 32px 0 12px; }
@@ -99,7 +100,7 @@ const styles = `
       "footer losers delete";
     column-gap: 12px;
   }
-  .game-body > .delete-btn, .game-body > .confirm-delete { grid-area: delete; }
+  .game-body > .game-actions { grid-area: delete; display: flex; flex-direction: column; align-items: center; gap: 4px; }
   /* Narrow: footer drops to its own full-width row so its tags never overflow. */
   @container (max-width: 480px) {
     .game-body {
@@ -118,14 +119,19 @@ const styles = `
   .game-players { grid-area: losers; display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
   .player-chip { font-size: 0.85rem; color: #a0b090; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
   .player-chip-name { line-height: 1.1; }
-  .delete-btn { background: none; border: none; color: #3a4a3a; cursor: pointer; font-size: 1rem; padding: 4px; line-height: 1; transition: color 0.15s; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; align-self: center; }
+  .delete-btn, .edit-scores-btn { background: none; border: none; color: #3a4a3a; cursor: pointer; font-size: 1rem; padding: 4px; line-height: 1; transition: color 0.15s; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; align-self: center; }
   .delete-btn:hover { color: #8b3a1a; }
+  .edit-scores-btn:hover { color: var(--accent-label); }
   .confirm-delete { display: flex; align-items: center; gap: 6px; flex-shrink: 0; align-self: center; }
   .confirm-text { font-size: 0.72rem; color: #f2a866; white-space: nowrap; }
   .confirm-yes { background: #8b3a1a; border: none; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 4px 10px; transition: background 0.15s; }
   .confirm-yes:hover { background: #a04520; }
   .confirm-no { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 4px 10px; transition: all 0.15s; }
   .confirm-no:hover { border-color: #5a6a4a; color: #f2e8d0; }
+  .edit-scores-panel { grid-column: 1 / -1; margin-top: 12px; padding-top: 12px; border-top: 1px solid #2d3b2d; }
+  .edit-scores-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .edit-scores-name { font-size: 0.85rem; color: #d8e0c8; }
+  .edit-scores-row input { width: 70px; }
 
   /* Error/validation/notice messages — dark box for strong contrast (color-blind friendly). */
   .notice { font-size: 0.8rem; line-height: 1.4; color: #f2a866; background: #0a110a; border: 1px solid #2a2114; border-left: 3px solid var(--accent-label); border-radius: 3px; padding: 8px 11px; }
@@ -405,6 +411,9 @@ export default function GroupLeaderboard({
   const [showForm, setShowForm] = useState(false);
   const [showRoster, setShowRoster] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editScoresId, setEditScoresId] = useState<string | null>(null);
+  const [scoreDrafts, setScoreDrafts] = useState<Record<string, string>>({});
+  const [savingScores, setSavingScores] = useState(false);
   const [joinName, setJoinName] = useState("");
   const [joinError, setJoinError] = useState("");
   const [newPlayerName, setNewPlayerName] = useState("");
@@ -637,6 +646,47 @@ export default function GroupLeaderboard({
     setGames((prev) => prev.filter((g) => g.id !== id));
   }
 
+  function openEditScores(g: Game) {
+    const drafts: Record<string, string> = {};
+    for (const p of g.players) drafts[p.id] = p.score != null ? String(p.score) : "";
+    setScoreDrafts(drafts);
+    setEditScoresId(g.id);
+  }
+
+  async function saveScores(g: Game) {
+    if (savingScores) return;
+    const players = g.players.map((p) => ({
+      id: p.id,
+      score: scoreDrafts[p.id]?.trim() ? scoreDrafts[p.id].trim() : undefined,
+    }));
+
+    // All-or-none: enforce client-side before hitting the API.
+    const scored = players.filter((p) => p.score !== undefined).length;
+    if (scored !== 0 && scored !== players.length) {
+      alert("Enter a score for every player, or leave them all blank.");
+      return;
+    }
+
+    setSavingScores(true);
+    try {
+      const res = await fetch(`/api/groups/${joinCode}/games/${g.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ players }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setGames((prev) => prev.map((game) => (game.id === g.id ? updated : game)));
+        setEditScoresId(null);
+      } else {
+        const data = await res.json();
+        alert(data.error ?? "Failed to update scores.");
+      }
+    } finally {
+      setSavingScores(false);
+    }
+  }
+
   // Games sorted newest-first for the battle log
   const sortedGames = [...games].sort((a, b) => b.date.localeCompare(a.date));
   const totalPages = Math.max(1, Math.ceil(sortedGames.length / pageSize));
@@ -760,6 +810,7 @@ export default function GroupLeaderboard({
           <div className="hero-sub">{groupName}</div>
           <div className="join-code">Join code: <span>{joinCode}</span></div>
           <Link className="hof-link" href={`/g/${joinCode}/hall-of-fame`}>🏛 Hall of Fame</Link>
+          <Link className="hof-link" href="/wiki">📖 How to play Root</Link>
         </div>
 
         <div className="container">
@@ -1188,23 +1239,31 @@ export default function GroupLeaderboard({
                             );
                           })}
                         </div>
-                        {confirmDeleteId === g.id ? (
-                          <div className="confirm-delete">
-                            <span className="confirm-text">Delete?</span>
-                            <button className="confirm-yes" onClick={() => { deleteGame(g.id); setConfirmDeleteId(null); }}>Yes</button>
-                            <button className="confirm-no" onClick={() => setConfirmDeleteId(null)}>No</button>
-                          </div>
-                        ) : (
-                          <button className="delete-btn" onClick={() => setConfirmDeleteId(g.id)} title="Delete">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="M3 6h18" />
-                              <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                              <line x1="10" y1="11" x2="10" y2="17" />
-                              <line x1="14" y1="11" x2="14" y2="17" />
+                        <div className="game-actions">
+                          <button className="edit-scores-btn" onClick={() => (editScoresId === g.id ? setEditScoresId(null) : openEditScores(g))} title="Edit VPs">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                              <path d="m15 5 4 4" />
                             </svg>
                           </button>
-                        )}
+                          {confirmDeleteId === g.id ? (
+                            <div className="confirm-delete">
+                              <span className="confirm-text">Delete?</span>
+                              <button className="confirm-yes" onClick={() => { deleteGame(g.id); setConfirmDeleteId(null); }}>Yes</button>
+                              <button className="confirm-no" onClick={() => setConfirmDeleteId(null)}>No</button>
+                            </div>
+                          ) : (
+                            <button className="delete-btn" onClick={() => setConfirmDeleteId(g.id)} title="Delete">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                         <div className="game-footer">
                           <span className="footer-date">{g.date.slice(0, 10)}</span>
                           <span className={`footer-tag ${g.isVirtual ? "tag-virtual" : "tag-inperson"}`}>
@@ -1213,6 +1272,30 @@ export default function GroupLeaderboard({
                           <span className="footer-tag tag-victory">{VICTORY_EMOJI[g.victoryType]} {g.victoryType}</span>
                           {g.hasHirelings && <span className="footer-tag tag-hirelings">🐾 Hirelings</span>}
                         </div>
+                        {editScoresId === g.id && (
+                          <div className="edit-scores-panel">
+                            <div className="field-label" style={{ marginBottom: 8 }}>Edit Victory Points</div>
+                            {g.players.map((p) => (
+                              <div key={p.id} className="edit-scores-row">
+                                <span className="edit-scores-name">{p.player.name}</span>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  inputMode="numeric"
+                                  placeholder="VP"
+                                  value={scoreDrafts[p.id] ?? ""}
+                                  onChange={(e) => setScoreDrafts((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                                />
+                              </div>
+                            ))}
+                            <div className="form-actions">
+                              <button className="btn-secondary" onClick={() => setEditScoresId(null)}>Cancel</button>
+                              <button className="btn-primary" onClick={() => saveScores(g)} disabled={savingScores}>
+                                {savingScores ? "Saving…" : "Save"}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );

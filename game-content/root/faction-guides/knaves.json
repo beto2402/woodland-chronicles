@@ -1,0 +1,226 @@
+{
+  "factionId": "knaves",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "Los Bribones del Bosque Profundo actúan cada turno con UNO de sus tres Capitanes (elegidos al empezar la partida), acompañado de Mofetas. Una vez que un Capitán actúa, no puede volver a hacerlo hasta que los otros dos también hayan actuado. No pueden jugarse en la misma partida que el Vagabundo."
+    }
+  },
+  "actions": {
+    "ready": {
+      "translations": {
+        "es": {
+          "title": "Preparar",
+          "body": "Coloca boca arriba una carta de Capitán en la casilla de Capitán en Acción de tu tablero. Obtienes el efecto de esa carta hasta que la Retires. Si el guerrero Capitán correspondiente no está en el mapa, colócalo en cualquier bosque, retira los Prisioneros de ese bosque y de los adyacentes, y este turno solo tendrás hasta 3 acciones en vez de 4 durante Actuar con el Capitán."
+        }
+      }
+    },
+    "move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Toma un movimiento con el Capitán en Acción (puedes llevar Mofetas contigo)."
+        }
+      }
+    },
+    "battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Inicia una [[concept:battle|batalla]] en el claro del Capitán en Acción."
+        }
+      }
+    },
+    "filch": {
+      "translations": {
+        "es": {
+          "title": "Fisgar",
+          "body": "Una vez por turno: [[concept:craft|fabrica]] una carta activando al Capitán en Acción, o toma 1 objeto de la caja de Objetos Fabricados de una facción rival en el claro del Capitán en Acción. Si fabricas un objeto con Fisgar, no anotas sus puntos de victoria."
+        }
+      }
+    },
+    "dash": {
+      "translations": {
+        "es": {
+          "title": "Objeto: Lanzarse",
+          "body": "Voltea boca abajo un objeto boca arriba de tu Alijo para: mover al Capitán en Acción hasta dos veces, ignorando la regla de gobernar."
+        }
+      }
+    },
+    "assault": {
+      "translations": {
+        "es": {
+          "title": "Objeto: Asaltar",
+          "body": "Voltea boca abajo un objeto boca arriba de tu Alijo para: iniciar una batalla en el claro del Capitán en Acción. Todos los guerreros que golpees los tomas como Prisioneros, moviéndolos a bosques separados sin Prisioneros."
+        }
+      }
+    },
+    "skirmish": {
+      "translations": {
+        "es": {
+          "title": "Objeto: Escaramuza",
+          "body": "Voltea boca abajo un objeto boca arriba de tu Alijo para: mover al Capitán en Acción desde un bosque, y luego iniciar una batalla en el claro de destino, ignorando el primer golpe que recibas."
+        }
+      }
+    },
+    "nab": {
+      "translations": {
+        "es": {
+          "title": "Objeto: Apresar",
+          "body": "Voltea boca abajo un objeto boca arriba de tu Alijo para: iniciar una batalla en el claro del Capitán en Acción. Si el Capitán en Acción recibe un golpe, no se retira: muévelo a un bosque adyacente en su lugar (o retíralo normalmente si no puede moverse). Si no recibió ningún golpe, puedes moverlo después de la batalla (tras colocar fervor)."
+        }
+      }
+    },
+    "revel": {
+      "translations": {
+        "es": {
+          "title": "Objeto: Alborotar",
+          "body": "Voltea boca abajo un objeto boca arriba de tu Alijo para: colocar 1 fervor y 1 Mofeta en el claro del Capitán en Acción (si está en un bosque, coloca solo la Mofeta). Si ya había fervor ahí, coloca 2 Mofetas en su lugar."
+        }
+      }
+    },
+    "gift": {
+      "translations": {
+        "es": {
+          "title": "Objeto: Obsequiar",
+          "body": "Voltea boca abajo un objeto boca arriba de tu Alijo para: colocar 1 fervor en el claro del Capitán en Acción y robar 1 carta (si está en un bosque, solo roba 1 carta). Si ya había fervor ahí, roba 2 cartas en su lugar."
+        }
+      }
+    },
+    "serve": {
+      "translations": {
+        "es": {
+          "title": "Objeto: Servir",
+          "body": "Voltea boca abajo un objeto boca arriba de tu Alijo para: colocar 1 fervor en el claro del Capitán en Acción. Si ya había fervor ahí, activa en su lugar cualquier cantidad de fervor de ese claro para [[concept:craft|fabricar]] cartas (sí anotas los puntos; cada ficha de fervor solo puede activarse una vez por turno para esto)."
+        }
+      }
+    },
+    "flex-combat": {
+      "translations": {
+        "es": {
+          "title": "Habilidad de Capitán: cambio a combate",
+          "body": "Solo si tu Capitán actual es el Montaraz: una vez por turno, como una acción, puedes voltear cualquier objeto de tu Alijo para tomar en su lugar Asaltar, Escaramuza o Apresar."
+        }
+      }
+    },
+    "flex-support": {
+      "translations": {
+        "es": {
+          "title": "Habilidad de Capitán: cambio a apoyo",
+          "body": "Solo si tu Capitán actual es el Errante: una vez por turno, como una acción, puedes voltear cualquier objeto de tu Alijo para tomar en su lugar Alborotar, Obsequiar o Servir."
+        }
+      }
+    },
+    "flex-any": {
+      "translations": {
+        "es": {
+          "title": "Habilidad de Capitán: comodín total",
+          "body": "Solo si tu Capitán actual es el Tramposo: como una acción, puedes voltear DOS objetos de tu Alijo para tomar cualquier Acción de Objeto."
+        }
+      }
+    },
+    "retire": {
+      "translations": {
+        "es": {
+          "title": "Retirar",
+          "body": "Voltea boca abajo la carta de Capitán en la casilla de Capitán en Acción y devuélvela a tu suministro."
+        }
+      }
+    },
+    "mock-the-powerful": {
+      "translations": {
+        "es": {
+          "title": "Mofarse de los Poderosos",
+          "body": "Anota 1 punto de victoria por cada 2 Prisioneros, y 1 punto de victoria por cada 2 fervor en el mapa."
+        }
+      }
+    },
+    "protect-the-weak": {
+      "translations": {
+        "es": {
+          "title": "Proteger a los Débiles",
+          "body": "Una vez por cada ficha de fervor, puedes gastar una carta de ese palo para colocar 1 Mofeta ahí."
+        }
+      }
+    },
+    "take-it-easy": {
+      "translations": {
+        "es": {
+          "title": "Relajarse",
+          "body": "Si las tres cartas de Capitán están boca abajo, voltéalas boca arriba, voltea todos los objetos de tu Alijo boca arriba, y el rival con más Prisioneros elige un claro: retira todos los Prisioneros de su facción de los bosques adyacentes y colócalos en ese claro. En caso de empate, tú eliges qué rival empatado decide."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta. Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["ready"], "repeat": "once" },
+    {
+      "kind": "action",
+      "id": "b2",
+      "phase": "daylight",
+      "actionIds": ["move", "battle", "filch", "dash", "assault", "skirmish", "nab", "revel", "gift", "serve", "flex-combat", "flex-support", "flex-any"],
+      "repeat": { "maxEs": "hasta 4 acciones, o hasta 3 si tu Capitán quedó en un bosque este Alba" }
+    },
+    { "kind": "action", "id": "b3", "phase": "daylight", "actionIds": ["retire"], "repeat": "once" },
+    { "kind": "action", "id": "b4", "phase": "evening", "actionIds": ["mock-the-powerful"], "repeat": "once" },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["protect-the-weak"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["take-it-easy"], "repeat": "once" },
+    { "kind": "action", "id": "b7", "phase": "evening", "actionIds": ["draw"], "repeat": "once" }
+  ],
+  "modifiers": [
+    { "id": "thief", "targetActionId": "filch", "translations": { "es": {
+      "name": "Ladrón",
+      "appendBody": "Después de usar Fisgar, puedes mover al Capitán en Acción."
+    } } },
+    { "id": "tinker", "targetActionId": "serve", "translations": { "es": {
+      "name": "Chatarrero",
+      "appendBody": "Después de usar Servir, roba 1 carta."
+    } } },
+    { "id": "arbiter", "targetActionId": "assault", "translations": { "es": {
+      "name": "Árbitro",
+      "appendBody": "En batallas de Asaltar, puedes recibir 1 golpe adicional para infligir 1 golpe adicional (decídelo después de tirar los dados)."
+    } } },
+    { "id": "scoundrel", "targetActionId": "skirmish", "translations": { "es": {
+      "name": "Bribón",
+      "appendBody": "Al usar Escaramuza, puedes mover desde el claro antes de la batalla en vez de después; si lo haces, no ignoras el primer golpe que recibas."
+    } } },
+    { "id": "adventurer", "targetActionId": ["revel", "gift", "serve"], "translations": { "es": {
+      "name": "Aventurero",
+      "appendBody": "Cada vez que coloques fervor en un claro con una ruina, roba 1 carta."
+    } } },
+    { "id": "harrier", "targetActionId": "dash", "translations": { "es": {
+      "name": "Hostigador",
+      "appendBody": "Al usar Lanzarse, puedes mover al Capitán hasta 3 veces (en vez de 2), ignorando la regla de gobernar."
+    } } },
+    { "id": "ronin", "targetActionId": "assault", "translations": { "es": {
+      "name": "Ronin",
+      "appendBody": "Al Asaltar, el Ronin puede moverse antes de la batalla."
+    } } },
+    { "id": "gladiator", "targetActionId": "assault", "translations": { "es": {
+      "name": "Gladiador",
+      "appendBody": "Al Asaltar, roba 1 carta al comienzo de la batalla."
+    } } },
+    { "id": "jailor", "targetActionId": "nab", "translations": { "es": {
+      "name": "Carcelero",
+      "appendBody": "En batallas de Apresar, puedes infligir 1 golpe menos (incluso sin infligir ninguno) para ignorar 1 golpe recibido por tirada (decídelo después de tirar los dados)."
+    } } }
+  ],
+  "modifiersMaxActive": 3,
+  "modifiersLabelEs": "Capitanes elegidos (Montaraz, Errante y Tramposo ya están arriba, en el listado de acciones)",
+  "notes": {
+    "es": [
+      "No se puede jugar en la misma partida que el Vagabundo.",
+      "Prisioneros (Tener a Alguien): en batallas de Asaltar y Apresar, los guerreros golpeados se toman como Prisioneros en vez de retirarse — se mueven a un bosque en vez de eliminarse. Los Prisioneros anotan puntos en Mofarse de los Poderosos y se liberan con Relajarse.",
+      "Rotación de Capitanes: eliges 3 Capitanes al empezar la partida. Cada turno actúas con uno (Preparar → Actuar → Retirar); ese Capitán no puede volver a actuar hasta que los otros dos también lo hayan hecho — entonces, en Relajarse, los tres se reinician a la vez.",
+      "El Alijo funciona como la caja de Objetos Fabricados de otras facciones, pero cada objeto se voltea boca abajo (en vez de gastarse) para usar su Acción de Objeto; todos se voltean boca arriba de nuevo con Relajarse."
+    ]
+  }
+}

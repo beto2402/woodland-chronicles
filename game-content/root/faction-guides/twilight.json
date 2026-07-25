@@ -1,0 +1,130 @@
+{
+  "factionId": "twilight",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "El Consejo del Crepúsculo revela cartas en su Alba para actuar de inmediato, y luego recupera esas mismas cartas en su Noche para actuar una segunda vez con ellas — el tipo de carta (Pájaro o no) determina qué puede hacer en esa segunda vuelta. Su Día no tiene apenas decisiones."
+    }
+  },
+  "actions": {
+    "birdsong-move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Revela una carta de tu mano (queda en tu área de juego, no se puede usar para nada más durante tu Alba) para tomar un movimiento desde un claro que coincida con ella."
+        }
+      }
+    },
+    "birdsong-recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Revela una carta para colocar 1 guerrero en un claro que coincida con ella."
+        }
+      }
+    },
+    "birdsong-battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Revela una carta para iniciar una [[concept:battle|batalla]] en un claro que coincida con ella. Si hay una Asamblea ahí, descarta la carta revelada."
+        }
+      }
+    },
+    "assemble": {
+      "translations": {
+        "es": {
+          "title": "Reunir Asamblea",
+          "body": "Revela una carta para colocar una Asamblea Cerrada y cualquier cantidad de Leales en un claro que coincida con ella y no tenga ya una Asamblea. Si no gobiernas ese claro, descarta la carta revelada."
+        }
+      }
+    },
+    "sleep": {
+      "translations": {
+        "es": {
+          "title": "Dormir",
+          "body": "Voltea a Cerradas todas las Asambleas que estén gobernadas por rivales."
+        }
+      }
+    },
+    "banish": {
+      "translations": {
+        "es": {
+          "title": "Desterrar",
+          "body": "Si la carta que devuelves NO es de Pájaro: inicia una batalla en un claro con una Asamblea que coincida. Los guerreros defensores golpeados no se retiran — en su lugar, fuérzalos a moverse a un único destino que elijas (cuenta como un solo movimiento). No puedes golpear edificios ni fichas, e ignoras los golpes por tirada que recibas (no los de emboscada ni los golpes extra). El Señor de los Cientos no puede mover así a su Caudillo, ni al Vagabundo (no es un guerrero), ni a los Secuaces."
+        }
+      }
+    },
+    "agitate": {
+      "translations": {
+        "es": {
+          "title": "Agitar",
+          "body": "Si la carta que devuelves NO es de Pájaro: gástala y elige una Asamblea que coincida (si no tienes ninguna que coincida, no puedes hacer esto). Coloca 1 guerrero en tus Leales, y voltea la Asamblea a Gobernante si estaba Cerrada."
+        }
+      }
+    },
+    "empower": {
+      "translations": {
+        "es": {
+          "title": "Empoderar",
+          "body": "Si la carta que devuelves SÍ es de Pájaro: elige una Asamblea. Tira un dado de batalla y retira de ahí esa cantidad de guerreros del Consejo. Colócalos en tus Leales, o anota 1 punto de victoria si gobiernas esa Asamblea."
+        }
+      }
+    },
+    "inspire": {
+      "translations": {
+        "es": {
+          "title": "Inspirar",
+          "body": "Activa tus Asambleas para [[concept:craft|fabricar]] cartas. Si no fabricas ninguna, roba 1 carta por cada icono de robo visible en tu tablero de Asambleas."
+        }
+      }
+    },
+    "adjourn": {
+      "translations": {
+        "es": {
+          "title": "Aplazar",
+          "body": "Puedes retirar cualquiera de tus Asambleas. Voltea a Gobernantes las Asambleas que gobiernes."
+        }
+      }
+    },
+    "oversee": {
+      "translations": {
+        "es": {
+          "title": "Supervisar",
+          "body": "Anota puntos de victoria según cuántas Asambleas Gobernantes compartan claro con edificios o fichas enemigas: 1 Asamblea = 1 punto; 2–3 = 2 puntos; 4 = 3 puntos; 5–6 = 4 puntos."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta. Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["birdsong-move", "birdsong-recruit", "birdsong-battle", "assemble"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b2", "phase": "daylight", "actionIds": ["sleep"], "repeat": "once" },
+    {
+      "kind": "action",
+      "id": "b3",
+      "phase": "evening",
+      "actionIds": ["banish", "agitate", "empower"],
+      "repeat": { "maxEs": "una vez por cada carta que devuelvas de las que revelaste en tu Alba; Desterrar y Agitar requieren una carta que no sea de Pájaro, Empoderar requiere que sí lo sea" }
+    },
+    { "kind": "action", "id": "b4", "phase": "evening", "actionIds": ["inspire"], "repeat": "once" },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["adjourn"], "repeat": "once" },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["oversee"], "repeat": "once" },
+    { "kind": "action", "id": "b7", "phase": "evening", "actionIds": ["draw"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "Gobernadores: en tus Asambleas Gobernantes, los rivales no pueden activar piezas de fabricación ni colocar, retirar, tomar o voltear piezas, salvo en batalla.",
+      "Suplicar: cualquier rival puede, cualquier cantidad de veces en su turno, obligarte a voltear una Asamblea a Cerrada; a cambio, tú colocas Leales ahí o 1 guerrero en tu reserva de Leales.",
+      "Guardianes de la Paz: cuando un rival ataca a otro rival en una de tus Asambleas, tus guerreros se suman como defensores (pero solo reciben golpes después de que se agoten los del defensor original). Esto no aplica si el Vagabundo es el defensor.",
+      "Leales: puedes guardar hasta 4 guerreros como Leales en tu tablero; se colocan con Suplicar o Reunir Asamblea, y puedes retirarlos cuando quieras."
+    ]
+  }
+}

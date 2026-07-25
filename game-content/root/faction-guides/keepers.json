@@ -1,0 +1,123 @@
+{
+  "factionId": "keepers",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "Los Guardianes de Hierro sacan Reliquias de los bosques, las mueven a una Estación de Paso del mismo tipo, y las recuperan para anotar puntos. Sus acciones diarias dependen de qué cartas tengan acumuladas en su Retinue: pueden perder la carta usada si no gobiernan suficientes claros al arriesgarse."
+    }
+  },
+  "actions": {
+    "encamp": {
+      "translations": {
+        "es": {
+          "title": "Acampar",
+          "body": "Una vez por claro, puedes sustituir un guerrero Guardián por una Estación de Paso (boca arriba o boca abajo, a tu elección). Si no tienes ni guerreros ni Estaciones en ningún claro, en su lugar coloca una Estación y un guerrero en cualquier claro del borde del mapa."
+        }
+      }
+    },
+    "decamp": {
+      "translations": {
+        "es": {
+          "title": "Desacampar",
+          "body": "Una vez por claro, puedes sustituir una Estación de Paso por un guerrero Guardián."
+        }
+      }
+    },
+    "keepers-recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Tantas veces como quieras, gasta una carta para colocar 2 guerreros en una Estación de Paso cuyo palo coincida."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con Estaciones",
+          "body": "Activa tus Estaciones de Paso (de cualquier tipo) para [[concept:craft|fabricar]] cartas de tu mano."
+        }
+      }
+    },
+    "retinue-move": {
+      "translations": {
+        "es": {
+          "title": "Retinue: Mover",
+          "body": "Toma un movimiento desde un claro cuyo palo coincida con el de la carta."
+        }
+      }
+    },
+    "retinue-battle-delve": {
+      "translations": {
+        "es": {
+          "title": "Retinue: Batallar y Excavar",
+          "body": "Elige un claro cuyo palo coincida con el de la carta. Si hay piezas enemigas que puedas batallar ahí, debes iniciar una batalla. Después, si gobiernas ese claro y tienes al menos 1 guerrero Guardián ahí, puedes Excavar: voltea una reliquia de un bosque adyacente y muévela a ese claro. Cuenta los claros que gobiernas adyacentes a ese bosque — si son menos que el valor de la reliquia, debes descartar la carta del Retinue que usaste para esta acción."
+        }
+      }
+    },
+    "retinue-move-recover": {
+      "translations": {
+        "es": {
+          "title": "Retinue: Mover o Recuperar",
+          "body": "Elige un claro cuyo palo coincida con el de la carta. Toma un movimiento desde ahí, o Recupera: retira una reliquia de ese claro cuyo tipo coincida con una Estación de Paso ahí, colócala en tu espacio de Reliquias, y anota puntos de victoria iguales a su valor (+2 si completas una columna). Cuenta los claros que gobiernas cuyo palo coincida con el claro de recuperación — si son menos que el valor de la reliquia, termina la acción y descarta la carta del Retinue usada; si no, puedes repetir el paso de tomar reliquia o terminar aquí."
+        }
+      }
+    },
+    "live-off-the-land": {
+      "translations": {
+        "es": {
+          "title": "Vivir de la Tierra",
+          "body": "Retira 1 guerrero Guardián de cada claro que tenga 4 o más guerreros Guardianes."
+        }
+      }
+    },
+    "gather-retinue": {
+      "translations": {
+        "es": {
+          "title": "Reunir Retinue",
+          "body": "Añade cualquier cantidad de cartas de tu mano a espacios del Retinue, o mueve una carta del Retinue a otro espacio. Tu Retinue no puede tener más de 10 cartas."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 adicional por cada icono de bonificación de robo (una por cada Estación de Paso en el mapa)."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["encamp"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["decamp"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b3", "phase": "birdsong", "actionIds": ["keepers-recruit"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b4", "phase": "daylight", "actionIds": ["craft"], "repeat": "unlimited" },
+    {
+      "kind": "action",
+      "id": "b5",
+      "phase": "daylight",
+      "actionIds": ["retinue-move", "retinue-battle-delve", "retinue-move-recover"],
+      "repeat": { "maxEs": "una vez por cada carta en tu Retinue, empezando por la columna Mover (más a la izquierda) hacia la derecha; puedes saltarte cartas si quieres" }
+    },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["live-off-the-land"], "repeat": "once" },
+    { "kind": "action", "id": "b7", "phase": "evening", "actionIds": ["gather-retinue"], "repeat": "once" },
+    { "kind": "action", "id": "b8", "phase": "evening", "actionIds": ["draw"], "repeat": "once" },
+    { "kind": "action", "id": "b9", "phase": "evening", "actionIds": ["discard"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "Caballeros Devotos: en una batalla, si el claro tiene al menos 1 reliquia y al menos 1 guerrero Guardián, ignoras el primer golpe que recibas (incluido el de una emboscada, aunque no golpes posteriores). Al mover, puedes llevar 1 reliquia por cada guerrero Guardián que muevas.",
+      "Trofeos Codiciados: si un rival te retira una reliquia, la coloca boca arriba en cualquier bosque y anota 1 punto de victoria extra (2 en total).",
+      "Reliquias: hay 12, de 3 tipos (figuras, tablillas, joyas), con valor 1 a 3. Recuperar un set completo de los 3 tipos anota 2 puntos extra."
+    ]
+  }
+}

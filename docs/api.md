@@ -136,6 +136,19 @@ Deletes a game.
 
 **Side effect:** After deletion, calls `recalculateGroupElo(groupId)` and `recalculateGlobalElo()` to replay all remaining games and update every affected player's ELO.
 
+### `PATCH /api/groups/[joinCode]/games/[id]`
+Edits victory points (`score`) for each player already recorded in a game. Doesn't touch faction, winner, or victory type — scores only.
+
+**Auth:** required  
+**Rules:** Must be the user who logged the game OR a group ADMIN (same check as `DELETE`, factored into a shared `canModifyGame` helper)  
+**Body:** `{ players: [{ id: "<GamePlayer id>", score: number | null }] }` — must include exactly one entry per `GamePlayer` on the game (no adding/removing players)
+- Scores are **all-or-none**, same rule as at creation: either every listed player gets a non-negative integer score, or every one is `null`/omitted (mixed is a 400)
+- 404 if the game isn't in this group; 400 if the player-id set doesn't exactly match the game's players
+
+**Side effect:** none on ELO (ELO only depends on `isWinner`/faction, not `score`). The average-VP stat on the leaderboard is computed live from `games` state on every render (see `docs/components.md`), so no separate recalculation step is needed — the frontend just needs to refresh its copy of the edited game, which it does with the response body.
+
+**Response:** the updated `Game` (same shape as the games list, including `players`, `loggedBy`, `moments`).
+
 ---
 
 ## Hall of Fame
@@ -188,6 +201,26 @@ Deletes a moment.
 
 **Auth:** required  
 **Rules:** must be the moment's creator OR a group ADMIN
+
+---
+
+## Wiki
+
+The in-app "how to play Root" wiki (`src/app/wiki/`) has **no API routes**, by design. Static
+content (concepts, cards, faction turn-guides) is read directly from `game-content/<gameId>/`
+via `src/lib/wiki/loaders.ts` — no server round-trip needed. The one DB-backed piece, per-faction
+`Tip`s, is queried directly via Prisma inside the server component
+`src/app/wiki/[gameId]/facciones/[factionId]/jugar/page.tsx`, the same pattern
+`src/app/g/[joinCode]/page.tsx` uses to fetch `Group` directly rather than via a client-side
+`fetch`. If you're looking for a `/api/wiki/*` route, it intentionally doesn't exist.
+
+---
+
+## Quinielas (not part of this app)
+
+`/api/quinielas/*` is a separate, hidden World Cup prediction pool that happens to live in the
+same codebase and database — it isn't part of the Woodland Chronicles / Root app. Documented on
+its own in **`docs/quinielas.md`**.
 
 ---
 

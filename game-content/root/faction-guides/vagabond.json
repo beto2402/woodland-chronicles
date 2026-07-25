@@ -1,0 +1,185 @@
+{
+  "factionId": "vagabond",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "El Vagabundo juega solo, con un peón en vez de guerreros. En Día puede tomar cualquiera de sus acciones tantas veces como quiera, siempre que tenga objetos sin agotar que gastar en ellas — no hay una fase de fabricación separada, fabricar es una acción más de la lista. Antes de empezar, elige tu personaje (Ladrón, Chatarrero o Montaraz): cada uno cambia tu Acción Especial."
+    }
+  },
+  "actions": {
+    "refresh": {
+      "translations": {
+        "es": {
+          "title": "Refrescar",
+          "body": "Voltea boca arriba 2 objetos agotados por cada Té boca arriba en tu pista de Refresco (sin contar los Té que voltees en este mismo paso). Después, voltea boca arriba 3 objetos agotados más."
+        }
+      }
+    },
+    "slip": {
+      "translations": {
+        "es": {
+          "title": "Escabullirse",
+          "body": "Puedes mover a un claro o bosque adyacente sin agotar ninguna Bota, incluso hacia un claro Hostil. Este movimiento ignora cualquier efecto que impida salir de un claro (como la Trampa de los Córvidos)."
+        }
+      }
+    },
+    "move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Agota 1 Bota para mover (una Bota adicional si el destino tiene guerreros de una facción Hostil). No puedes mover a un bosque; si estás en un bosque, solo puedes moverte a un claro adyacente."
+        }
+      }
+    },
+    "battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Agota 1 Espada para iniciar una [[concept:battle|batalla]]. Comprueba antes tu relación con el defensor: no puedes atacar a una facción con la que no seas Hostil."
+        }
+      }
+    },
+    "explore": {
+      "translations": {
+        "es": {
+          "title": "Explorar",
+          "body": "Agota 1 Bolsa para tomar un objeto de bajo una ruina en tu claro, revelarlo y colocarlo boca arriba en tu Mochila o en su pista correspondiente. Si tomas un objeto, anota 1 punto de victoria. Si retiras el último objeto de una ruina, retira también la ruina."
+        }
+      }
+    },
+    "aid": {
+      "translations": {
+        "es": {
+          "title": "Ayudar",
+          "body": "Agota cualquier objeto y da una carta que coincida con tu claro a un jugador con piezas de su facción ahí (incluso Hostil). Si lo haces, puedes tomar un objeto, si hay alguno, de su caja de Objetos Fabricados, y colocarlo boca arriba en tu Mochila o su pista. Comprueba tu relación con esa facción: ayudar mejora la relación."
+        }
+      }
+    },
+    "quest": {
+      "translations": {
+        "es": {
+          "title": "Búsqueda",
+          "body": "Elige una búsqueda cuyo palo coincida con tu claro, y agota los dos objetos que indica. Coloca la búsqueda en tu área de juego como completada. Después, elige entre anotar 1 punto de victoria por cada búsqueda completada de ese tipo (incluida esta), o robar 2 cartas del mazo. Por último, roba una nueva búsqueda y colócala cerca del mapa."
+        }
+      }
+    },
+    "strike": {
+      "translations": {
+        "es": {
+          "title": "Golpear",
+          "body": "Agota 1 Bolsillo (C) para retirar un guerrero enemigo de tu claro. Si ese rival no tiene guerreros ahí, puedes retirar en su lugar otra de sus piezas. Comprueba tu relación con esa facción: golpear la vuelve Hostil."
+        }
+      }
+    },
+    "repair": {
+      "translations": {
+        "es": {
+          "title": "Reparar",
+          "body": "Agota 1 Martillo para mover un objeto dañado a tu Mochila, manteniendo la cara en la que está. (Los objetos boca arriba de tipo Té, Bota o Bolsa pasan de inmediato a sus pistas.)"
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar",
+          "body": "[[concept:craft|Fabrica]] una carta agotando 1 Martillo por cada icono de fabricación que tenga. Tu claro debe coincidir con todos los iconos de fabricación de la carta. Si fabricas un objeto, colócalo en tu Mochila o en su pista correspondiente."
+        }
+      }
+    },
+    "special-action": {
+      "translations": {
+        "es": {
+          "title": "Acción Especial",
+          "body": "Toma la acción indicada en tu carta de personaje, agotando los objetos que pida. (Elige tu personaje arriba para ver el detalle.)"
+        }
+      }
+    },
+    "rest": {
+      "translations": {
+        "es": {
+          "title": "Descansar",
+          "body": "Si estás en un bosque, mueve todos tus objetos dañados a tu Mochila y voltéalos boca arriba. (Los de tipo Té, Bota o Bolsa boca arriba pasan de inmediato a sus pistas.)"
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 adicional por cada Té boca arriba en su pista."
+        }
+      }
+    },
+    "discard": {
+      "translations": {
+        "es": {
+          "title": "Descartar hasta el límite",
+          "body": "Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    },
+    "check-item-capacity": {
+      "translations": {
+        "es": {
+          "title": "Comprobar capacidad",
+          "body": "Tu límite de objetos es 6, más 2 por cada Bolsillo (C) boca arriba en su pista. Si tienes más objetos en total (Mochila + dañados) que ese límite, retira objetos hasta quedarte en el límite — se eliminan del juego permanentemente."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["refresh"], "repeat": "once" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["slip"], "repeat": "once" },
+    {
+      "kind": "action",
+      "id": "b3",
+      "phase": "daylight",
+      "actionIds": ["move", "battle", "explore", "aid", "quest", "strike", "repair", "craft", "special-action"],
+      "repeat": "unlimited"
+    },
+    { "kind": "action", "id": "b4", "phase": "evening", "actionIds": ["rest"], "repeat": "once" },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["draw"], "repeat": "once" },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["discard"], "repeat": "once" },
+    { "kind": "action", "id": "b7", "phase": "evening", "actionIds": ["check-item-capacity"], "repeat": "once" }
+  ],
+  "variants": [
+    {
+      "id": "thief",
+      "translations": { "es": { "name": "Ladrón", "description": "Objetos iniciales: Bota, Bolsa, Té y Espada. Acción Especial — Robar: agota 1 Bolsa para tomar una carta al azar de un jugador con piezas de su facción en tu claro." } },
+      "actionOverrides": {
+        "special-action": { "translations": { "es": {
+          "title": "Robar",
+          "body": "Agota 1 Bolsa para tomar una carta al azar de un jugador con piezas de su facción en tu claro."
+        } } }
+      }
+    },
+    {
+      "id": "tinker",
+      "translations": { "es": { "name": "Chatarrero", "description": "Objetos iniciales: Bota, Bolsa, Bolsillo y Martillo. Acción Especial — Trabajo Diario: agota 1 Bolsa para tomar una carta de la pila de descartes cuyo palo coincida con tu claro (siempre puedes tomar una de Pájaro)." } },
+      "actionOverrides": {
+        "special-action": { "translations": { "es": {
+          "title": "Trabajo Diario",
+          "body": "Agota 1 Bolsa para tomar una carta de la pila de descartes cuyo palo coincida con tu claro. (Siempre puedes tomar una carta de Pájaro.)"
+        } } }
+      }
+    },
+    {
+      "id": "ranger",
+      "translations": { "es": { "name": "Montaraz", "description": "Objetos iniciales: Bota, Bolsa, Bolsillo y Espada. Acción Especial — Escondite: agota 1 Bolsa para reparar tres objetos; después, termina tu Día de inmediato y comienza tu Noche." } },
+      "actionOverrides": {
+        "special-action": { "translations": { "es": {
+          "title": "Escondite",
+          "body": "Agota 1 Bolsa para reparar tres objetos. Después, termina tu Día de inmediato y comienza tu Noche — no puedes tomar más acciones de Día este turno."
+        } } }
+      }
+    }
+  ],
+  "notes": {
+    "es": [
+      "El Vagabundo no pierde guerreros en batalla del modo habitual: los golpes dañan objetos en vez de eliminar piezas, y su máximo de golpes al tirar depende de su Espada sin dañar, no de un número de guerreros.",
+      "Relaciones: el Vagabundo lleva una pista de relación (Aliado/Hostil) con cada facción, que mejora al Ayudar y empeora a Hostil al Golpear o Batallar sin ser ya Hostil. Ser Aliado desbloquea bonificaciones; ser Hostil impone un coste de movimiento extra pero permite anotar por Infamia.",
+      "Coalición: en partidas de 4 o más jugadores, el Vagabundo no puede ganar por Dominancia — en su lugar puede formar una coalición con otro jugador y gana si ese jugador gana."
+    ]
+  }
+}
