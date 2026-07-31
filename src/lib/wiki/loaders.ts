@@ -12,6 +12,9 @@ import rootDuchyGuide from "../../../game-content/root/faction-guides/undergroun
 import rootKeepersGuide from "../../../game-content/root/faction-guides/keepers.json";
 import rootTwilightGuide from "../../../game-content/root/faction-guides/twilight.json";
 import rootKnavesGuide from "../../../game-content/root/faction-guides/knaves.json";
+import rootLilypadGuide from "../../../game-content/root/faction-guides/lilypad.json";
+import rootLordGuide from "../../../game-content/root/faction-guides/lord-of-the-hundreds.json";
+import rootCorvidGuide from "../../../game-content/root/faction-guides/corvid.json";
 
 export const SUPPORTED_GAMES = ["root"] as const;
 export type GameId = (typeof SUPPORTED_GAMES)[number];
@@ -86,6 +89,9 @@ const GUIDES_BY_GAME: Record<GameId, Record<string, FactionTurnGuide>> = {
     keepers: rootKeepersGuide as FactionTurnGuide,
     twilight: rootTwilightGuide as FactionTurnGuide,
     knaves: rootKnavesGuide as FactionTurnGuide,
+    lilypad: rootLilypadGuide as FactionTurnGuide,
+    lord: rootLordGuide as FactionTurnGuide,
+    corvid: rootCorvidGuide as FactionTurnGuide,
   },
 };
 

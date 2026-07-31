@@ -1,0 +1,91 @@
+{
+  "factionId": "lilypad",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "La Diáspora del Nenúfar coloca Enclaves (Pacíficos o Militantes) que añaden el palo rana a su claro. Los Enclaves Militantes obligan a la Diáspora a batallar ahí cada Noche, así que conviene reconciliarlos a Pacíficos cuando se pueda."
+    }
+  },
+  "actions": {
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con Enclaves",
+          "body": "Activa tus Enclaves para [[concept:craft|fabricar]] cartas de tu mano."
+        }
+      }
+    },
+    "rally": {
+      "translations": {
+        "es": {
+          "title": "Convocar",
+          "body": "Coloca 1 guerrero en cada Enclave Militante."
+        }
+      }
+    },
+    "reconcile": {
+      "translations": {
+        "es": {
+          "title": "Reconciliar",
+          "body": "Voltea cualquier cantidad de Enclaves Militantes a Pacíficos. Cada vez que lo hagas, si algún jugador gobierna ese claro, roba 1 carta (puedes robarla del Estanque)."
+        }
+      }
+    },
+    "settle": {
+      "translations": {
+        "es": {
+          "title": "Asentar",
+          "body": "Elige un claro. Puedes mover hacia él desde cualquier cantidad de claros adyacentes (una vez desde cada uno). Después, puedes iniciar una batalla ahí, o colocar un Enclave Pacífico si no tiene ninguno y lo gobiernas."
+        }
+      }
+    },
+    "provoke": {
+      "translations": {
+        "es": {
+          "title": "Provocar",
+          "body": "Voltea un Enclave Pacífico a Militante, o coloca un Enclave Militante en el río o junto a un guerrero de la Diáspora. Después, coloca 1 guerrero en cada Enclave Militante. Por último, descarta una carta al azar (omite este paso si no tienes cartas)."
+        }
+      }
+    },
+    "retaliate": {
+      "translations": {
+        "es": {
+          "title": "Represaliar",
+          "body": "Debes batallar en cada Enclave Militante. Si durante este paso se colocan piezas enemigas en un Enclave Militante que no tenía ninguna, también debes batallar ahí. Debes batallar contra Mercenarios de la Compañía Ribereña si son la única forma de hacerlo."
+        }
+      }
+    },
+    "integrate": {
+      "translations": {
+        "es": {
+          "title": "Integrar",
+          "body": "Puedes gastar una carta para anotar 1 punto de victoria por cada Enclave Pacífico de ese palo en el mapa. No puedes anotar por el palo rana. Solo puedes hacer esto una vez por turno."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más cartas según tus Enclaves Pacíficos en el mapa: +1 con 2–3, +2 con 4–7, +3 con 8 o más. Si tienes más de 5 cartas, descarta hasta quedarte con 5."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["craft"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["rally", "reconcile"], "repeat": "once" },
+    { "kind": "action", "id": "b3", "phase": "daylight", "actionIds": ["settle", "provoke"], "repeat": { "max": 3 } },
+    { "kind": "action", "id": "b4", "phase": "evening", "actionIds": ["retaliate"], "repeat": "once" },
+    { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["integrate"], "repeat": { "max": 1 } },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["draw"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "El Estanque: las cartas rana descartadas van a una pila aparte (el Estanque) en vez del descarte normal. Al robar, puedes tomar la primera carta del Estanque en vez del mazo. Al barajar el mazo, el Estanque se mezcla también en él.",
+      "Nadadores: la Diáspora trata los ríos como caminos y puede moverse por un río que conecte dos claros, sin necesidad de gobernar ninguno.",
+      "Los Miedos se Hacen Realidad: si un rival ataca un Enclave Pacífico defendido por la Diáspora, o retira uno fuera de batalla, todos los Enclaves Pacíficos con piezas de ese rival se voltean a Militantes y ganan 1 guerrero cada uno — esto ocurre en el turno del RIVAL, no en el tuyo.",
+      "Negociaciones: una vez en su turno, un rival con piezas en un claro con Enclave Militante puede voltearlo a Pacífico; si no gobierna ese claro pero otro jugador sí, debe darle una carta a quien lo gobierne."
+    ]
+  }
+}

@@ -83,6 +83,24 @@
       "key": "knaves-forest-choice-matters",
       "text": "Si tu Capitán no está en el mapa al Preparar, tú eliges en qué bosque reaparece — y quedar en un bosque te limita a 3 acciones en vez de 4 ese turno. Piensa bien esa elección, no la trates como un trámite.",
       "targets": [{ "factionId": "knaves", "actionId": "ready" }]
+    },
+    {
+      "gameId": "root",
+      "key": "lilypad-reconcile-before-night",
+      "text": "Cada Enclave Militante te obliga a batallar ahí en Represaliar. Si no piensas defenderlo, reconcílialo a Pacífico antes de que llegue tu Noche — te ahorras una batalla que no elegiste.",
+      "targets": [{ "factionId": "lilypad", "actionId": "reconcile" }]
+    },
+    {
+      "gameId": "root",
+      "key": "lord-mood-matches-plan",
+      "text": "Elige tu Humor pensando en lo que vas a hacer ESTE turno, no en general: por ejemplo, Iracundo solo sirve de algo si vas a atacar en el claro de tu Caudillo. Un buen Humor mal aprovechado es una acción desperdiciada.",
+      "targets": [{ "factionId": "lord", "actionId": "choose-mood" }]
+    },
+    {
+      "gameId": "root",
+      "key": "corvid-plot-gets-pricier",
+      "text": "Conspirar se encarece cada vez que lo repites en el mismo turno: cuesta un guerrero más por cada ficha de conspiración que ya hayas colocado ese turno. No planees colocar muchas de golpe sin contar el coste creciente.",
+      "targets": [{ "factionId": "corvid", "actionId": "plot" }]
     }
   ]
 }

@@ -98,6 +98,33 @@ const CRAFTING_INFO_BY_GAME: Record<GameId, Record<string, FactionCraftingInfo>>
         },
       },
     },
+    lilypad: {
+      factionId: "lilypad",
+      translations: {
+        es: {
+          pieceName: "Enclave",
+          obtain: "Se coloca con las acciones Asentar o Provocar. Se fabrica con ellos durante tu Alba, sin importar si son Pacíficos o Militantes.",
+        },
+      },
+    },
+    lord: {
+      factionId: "lord",
+      translations: {
+        es: {
+          pieceName: "Fortaleza",
+          obtain: "Se coloca con la acción Construir en un claro que gobiernes. Se fabrica con ellas durante tu Día.",
+        },
+      },
+    },
+    corvid: {
+      factionId: "corvid",
+      translations: {
+        es: {
+          pieceName: "Ficha de conspiración",
+          obtain: "Se coloca con la acción Conspirar. Puede activarse para fabricar boca arriba o boca abajo, durante tu Alba.",
+        },
+      },
+    },
   },
 };
 

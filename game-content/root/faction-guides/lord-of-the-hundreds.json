@@ -1,0 +1,203 @@
+{
+  "factionId": "lord",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "El Señor de los Cientos lidera con su Caudillo, una pieza especial que casi no se puede tocar fuera de su turno. Cada Alba debe elegir un nuevo Humor (una habilidad para todo el turno), y cuantos más objetos acumule en su Alijo, menos Humores le quedarán disponibles para elegir."
+    }
+  },
+  "actions": {
+    "raze": {
+      "translations": {
+        "es": {
+          "title": "Arrasar",
+          "body": "En cada claro con una ficha de turba, retira todos los edificios y fichas enemigas, toma un objeto de la ruina de ese claro (si hay), y retira la ruina si tomaste su último objeto. Después, debes tirar el dado de turba y colocar una ficha de turba en un claro que coincida, sin ficha de turba, adyacente a un claro con ficha de turba (si no hay ningún claro así, no coloques ninguna)."
+        }
+      }
+    },
+    "hoard-recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Coloca guerreros iguales a tu Ímpetu en el claro de tu Caudillo. Después, coloca guerreros en cada claro con Fortalezas, uno por Fortaleza."
+        }
+      }
+    },
+    "anoint": {
+      "translations": {
+        "es": {
+          "title": "Ungir",
+          "body": "Si el Caudillo no está en el mapa, debes sustituir un guerrero tuyo en algún claro por el Caudillo. Si no puedes, coloca al Caudillo en cualquier claro."
+        }
+      }
+    },
+    "choose-mood": {
+      "translations": {
+        "es": {
+          "title": "Elegir Humor",
+          "body": "Debes sustituir la carta de Humor de tu casilla por otra distinta que no muestre un objeto que ya tengas en tu Alijo. Si tu Humor era Espléndido y no puedes elegir uno nuevo, sigues Espléndido."
+        }
+      }
+    },
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con Fortalezas",
+          "body": "Activa tus Fortalezas para [[concept:craft|fabricar]] cartas de tu mano."
+        }
+      }
+    },
+    "command-move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Toma un movimiento."
+        }
+      }
+    },
+    "command-battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Inicia una [[concept:battle|batalla]]."
+        }
+      }
+    },
+    "command-build": {
+      "translations": {
+        "es": {
+          "title": "Construir",
+          "body": "Gasta una carta para colocar una Fortaleza en un claro que gobiernes cuyo palo coincida."
+        }
+      }
+    },
+    "advance-warlord": {
+      "translations": {
+        "es": {
+          "title": "Avanzar al Caudillo",
+          "body": "Puedes mover al Caudillo junto con cualquier cantidad de guerreros tuyos, y después puedes batallar en el claro del Caudillo."
+        }
+      }
+    },
+    "incite": {
+      "translations": {
+        "es": {
+          "title": "Incitar",
+          "body": "Cualquier cantidad de veces, gasta una carta para colocar una ficha de turba en un claro que coincida, sin ficha de turba, que tenga un guerrero tuyo (incluido el Caudillo)."
+        }
+      }
+    },
+    "oppress": {
+      "translations": {
+        "es": {
+          "title": "Oprimir",
+          "body": "Anota puntos de victoria según cuántos claros gobiernes que tengan una pieza tuya y ninguna pieza enemiga: 1–2 claros = 1 punto; 3–4 = 2 puntos; 5 = 3 puntos; 6 o más = 4 puntos."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta. Si tienes más de 5 cartas en [[concept:hand-of-cards|mano]], descarta hasta quedarte con 5."
+        }
+      }
+    },
+    "mood-bitter": {
+      "translations": {
+        "es": {
+          "title": "Humor: Amargo",
+          "body": "En una batalla en el claro de tu Caudillo, antes de tirar los dados puedes retirar cualquier cantidad de fichas de turba de ese claro y de los adyacentes. Coloca en el claro del Caudillo tantos guerreros como fichas de turba hayas retirado."
+        }
+      }
+    },
+    "mood-grandiose": {
+      "translations": {
+        "es": {
+          "title": "Humor: Grandilocuente",
+          "body": "Este turno, realiza Avanzar al Caudillo antes que Comandar a los Cientos — el orden habitual se invierte."
+        }
+      }
+    },
+    "mood-jubilant": {
+      "translations": {
+        "es": {
+          "title": "Humor: Jubiloso",
+          "body": "Cada vez que uses Incitar en el claro de tu Caudillo, después de colocar esa ficha de turba puedes (hasta 4 veces) tirar el dado de turba y colocar una ficha de turba adicional en un claro que coincida, sin ficha de turba, adyacente a cualquier claro con ficha de turba."
+        }
+      }
+    },
+    "mood-lavish": {
+      "translations": {
+        "es": {
+          "title": "Humor: Espléndido",
+          "body": "Al final de tu Alba, puedes retirar permanentemente cualquier cantidad de objetos de tu Alijo. Por cada objeto retirado, coloca 2 guerreros en el claro de tu Caudillo. Al terminar, desliza los objetos restantes de tu Alijo para llenar sus pistas de izquierda a derecha."
+        }
+      }
+    },
+    "mood-relentless": {
+      "translations": {
+        "es": {
+          "title": "Humor: Implacable",
+          "body": "Cada vez que uses Avanzar al Caudillo y muevas Y batalles en la misma repetición, después puedes además mover al Caudillo con cualquier guerrero tuyo, o batallar en su claro."
+        }
+      }
+    },
+    "mood-rowdy": {
+      "translations": {
+        "es": {
+          "title": "Humor: Alborotador",
+          "body": "En tu Noche, roba 1 carta adicional al robar. Si el claro de tu Caudillo tiene 3 o más piezas enemigas (aunque sean de varias facciones), roba 2 adicionales en su lugar."
+        }
+      }
+    },
+    "mood-stubborn": {
+      "translations": {
+        "es": {
+          "title": "Humor: Terco",
+          "body": "En una batalla en el claro de tu Caudillo, ignoras el primer golpe que recibas. (No se combina con otras habilidades que también ignoren el primer golpe.)"
+        }
+      }
+    },
+    "mood-wrathful": {
+      "translations": {
+        "es": {
+          "title": "Humor: Iracundo",
+          "body": "Como atacante en una batalla en el claro de tu Caudillo, das un golpe adicional."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["raze"], "repeat": "once" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["hoard-recruit"], "repeat": "once" },
+    { "kind": "action", "id": "b3", "phase": "birdsong", "actionIds": ["anoint"], "repeat": "once" },
+    {
+      "kind": "action",
+      "id": "b4",
+      "phase": "birdsong",
+      "actionIds": ["mood-bitter", "mood-grandiose", "mood-jubilant", "mood-lavish", "mood-relentless", "mood-rowdy", "mood-stubborn", "mood-wrathful"],
+      "repeat": "once"
+    },
+    { "kind": "action", "id": "b5", "phase": "daylight", "actionIds": ["craft"], "repeat": "unlimited" },
+    {
+      "kind": "action",
+      "id": "b6",
+      "phase": "daylight",
+      "actionIds": ["command-move", "command-battle", "command-build"],
+      "repeat": { "maxEs": "tu Comando (1 sin objetos, 2 con uno o dos, 3 con tres, 4 con cuatro)" }
+    },
+    { "kind": "action", "id": "b7", "phase": "daylight", "actionIds": ["advance-warlord"], "repeat": { "maxEs": "tu Ímpetu (misma escala que el Comando, según objetos en esa pista)" } },
+    { "kind": "action", "id": "b8", "phase": "evening", "actionIds": ["incite"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b9", "phase": "evening", "actionIds": ["oppress"], "repeat": "once" },
+    { "kind": "action", "id": "b10", "phase": "evening", "actionIds": ["draw"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "El Caudillo: no se puede retirar salvo en batalla, ni mover fuera de tu turno, ni colocar salvo en la preparación y con Ungir.",
+      "Desdén por el Comercio: al fabricar un objeto, puedes tomarlo sin anotar sus puntos, o retirarlo permanentemente para sí anotarlos.",
+      "El Alijo: en vez de una caja de Objetos Fabricados normal, tienes dos pistas (Comando y Ímpetu) que determinan esos valores según cuántos objetos tengas — sin objetos: 1; con uno o dos: 2; con tres: 3; con cuatro: 4.",
+      "Saqueadores: al atacar, puedes declarar que quieres saquear (si el defensor tiene algún objeto fabricado, y no es el Vagabundo): no infliges golpes por tirada, pero si gobiernas el claro al final de la batalla, tomas un objeto del defensor."
+    ]
+  }
+}

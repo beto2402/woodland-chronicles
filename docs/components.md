@@ -203,13 +203,14 @@ everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Pr
   concepts + cards + factions into one flat array, substring-matched against every populated
   language's name/aliases.
 - `faction-crafting.ts` — `FactionCraftingInfo` per faction (which piece it activates to craft,
-  how it's obtained) for the beginner-mode card explanation. Covers all 10 factions with a
-  turn-guide today: Marquise (Workshop), Alliance (Sympathy token), Eyrie (Roost), Vagabond
-  (bespoke — exhausts Hammer items directly, no board piece, no once/turn cap), Riverfolk (bespoke
-  — no piece at all, commits funds instead), Lizard Cult (Gardens matching the *current* Outcast
-  suit), Underground Duchy (Citadel/Market), Keepers in Iron (Waystation), Twilight Council
-  (Assembly), Knaves of the Deepwood (bespoke — Acting Captain or acclaim, no fixed piece) — add
-  more as guides are written.
+  how it's obtained) for the beginner-mode card explanation. Covers all 14 factions, every one
+  with a complete turn-guide today: Marquise (Workshop), Alliance (Sympathy token), Eyrie (Roost),
+  Vagabond/Vagabond 2nd (bespoke — exhausts Hammer items directly, no board piece, no once/turn
+  cap), Riverfolk (bespoke — no piece at all, commits funds instead), Lizard Cult (Gardens
+  matching the *current* Outcast suit), Underground Duchy (Citadel/Market), Keepers in Iron
+  (Waystation), Twilight Council (Assembly), Knaves of the Deepwood (bespoke — Acting Captain or
+  acclaim, no fixed piece), Lilypad Diaspora (Enclave), Lord of the Hundreds (Stronghold), Corvid
+  Conspiracy (plot token).
 
 **Turn-guide data model** — a `FactionTurnGuide.blocks` is a sequence of `GuideBlock`s (a
 discriminated union on `kind`), rendered in array order (no separate ordering field):

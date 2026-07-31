@@ -1,0 +1,97 @@
+{
+  "factionId": "corvid",
+  "status": "complete",
+  "translations": {
+    "es": {
+      "intro": "La Conspiración Corvina coloca fichas de conspiración boca abajo y las voltea para anotar puntos y desatar efectos — cuantas más tenga boca arriba en el mapa, más anota cada vez que voltea una. En tu Noche, puedes usar una acción de Día extra (Agotarte) a cambio de no robar cartas."
+    }
+  },
+  "actions": {
+    "craft": {
+      "translations": {
+        "es": {
+          "title": "Fabricar con conspiraciones",
+          "body": "Activa tus fichas de conspiración (boca arriba o boca abajo) para [[concept:craft|fabricar]] cartas de tu mano."
+        }
+      }
+    },
+    "flip-plots": {
+      "translations": {
+        "es": {
+          "title": "Voltear conspiraciones",
+          "body": "Cualquier cantidad de veces, voltea boca arriba una ficha de conspiración en un claro con guerreros del Córvido. Anota 1 punto de victoria por cada ficha de conspiración boca arriba en el mapa (incluida la recién volteada), y resuelve su efecto si es una Bomba o una Extorsión."
+        }
+      }
+    },
+    "corvid-recruit": {
+      "translations": {
+        "es": {
+          "title": "Reclutar",
+          "body": "Una vez por turno, gasta cualquier carta para colocar un guerrero en cada claro que coincida. (Si gastas una de Pájaro, elige un palo.)"
+        }
+      }
+    },
+    "move": {
+      "translations": {
+        "es": {
+          "title": "Mover",
+          "body": "Toma un movimiento."
+        }
+      }
+    },
+    "plot": {
+      "translations": {
+        "es": {
+          "title": "Conspirar",
+          "body": "Retira un guerrero del Córvido —más otro guerrero del Córvido por cada conspiración que hayas colocado este turno— de un claro sin fichas de conspiración, para colocar ahí una ficha de conspiración boca abajo."
+        }
+      }
+    },
+    "battle": {
+      "translations": {
+        "es": {
+          "title": "Batallar",
+          "body": "Inicia una [[concept:battle|batalla]]."
+        }
+      }
+    },
+    "trick": {
+      "translations": {
+        "es": {
+          "title": "Truco",
+          "body": "Intercambia dos fichas de conspiración del mapa. Ambas deben estar boca arriba, o ambas boca abajo."
+        }
+      }
+    },
+    "draw": {
+      "translations": {
+        "es": {
+          "title": "Robar cartas",
+          "body": "Roba 1 carta, más 1 por cada ficha de Extorsión boca arriba en el mapa. Si tienes más de 5 cartas, descarta hasta quedarte con 5. Si usaste Agotarte esta Noche, omite este paso por completo."
+        }
+      }
+    }
+  },
+  "blocks": [
+    { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["craft"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["flip-plots"], "repeat": "unlimited" },
+    { "kind": "action", "id": "b3", "phase": "birdsong", "actionIds": ["corvid-recruit"], "repeat": { "max": 1 } },
+    { "kind": "action", "id": "b4", "phase": "daylight", "actionIds": ["move", "plot", "battle", "trick"], "repeat": { "max": 3 } },
+    {
+      "kind": "action",
+      "id": "b5",
+      "phase": "evening",
+      "actionIds": ["move", "plot", "battle", "trick"],
+      "repeat": { "max": 1, "bonusEs": "Opcional: puedes tomar una de estas mismas acciones de Día en vez de Robar cartas esta Noche. Si lo haces, omite el paso Robar." }
+    },
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["draw"], "repeat": "once" }
+  ],
+  "notes": {
+    "es": [
+      "Ágil: el Córvido puede mover sin importar quién gobierne el claro de origen o destino.",
+      "Exposición: cualquier cantidad de veces en el turno del Córvido, un rival con piezas en un claro con una ficha de conspiración boca abajo puede enseñar una carta que coincida para adivinar su tipo. Si acierta, retira la ficha (anotando 1 punto); si falla, le da esa carta al Córvido. No se puede usar Exposición una vez empezado el último paso del turno del Córvido.",
+      "Agentes Encubiertos: como defensor, si el Córvido tiene una ficha de conspiración boca abajo en el claro de batalla (incluso estando indefenso), inflige un golpe adicional.",
+      "Fichas de conspiración: Bomba (al voltearse, retira todas las piezas enemigas del claro y luego se retira ella misma), Trampa (mientras esté boca arriba, los rivales no pueden colocar ni mover piezas desde ese claro), Extorsión (al voltearse, roba una carta al azar de cada rival presente; mientras esté boca arriba, robas una carta extra cada Noche), Asalto (al retirarse, coloca un guerrero en cada claro adyacente — no si se retira por Exposición)."
+    ]
+  }
+}
