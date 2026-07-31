@@ -237,18 +237,26 @@ visitor's stored wiki language is Spanish and the server already resolved `hasAc
 ## Admin
 
 `src/app/admin/` — a single, unlinked page (`/admin`, no nav entry anywhere) for granting
-`wikiPdfAccess`. Gated by `requireAdmin()` (`src/lib/admin.ts`), which checks the signed-in
-user's `User.isAdmin`; the page 404s (not a redirect) for non-admins, so its existence isn't
-hinted at. `isAdmin` itself has no route — it's toggled by hand via `npx prisma studio`, on
-purpose, since granting admin is rarer and higher-stakes than granting PDF access.
+`wikiPdfAccess` and `isAdmin`. Gated by `requireAdmin()` (`src/lib/admin.ts`), which checks the
+signed-in user's `User.isAdmin`; the page 404s (not a redirect) for non-admins, so its existence
+isn't hinted at. The user list is searched (name/email, client-side) and paginated
+(`AdminUserAccess.tsx`, `PAGE_SIZE = 10`) directly against the full list fetched once via Prisma
+in the server component — no server-side search/pagination route, since the user count is small.
+`wikiPdfAccess` toggles inline per row; `isAdmin` is managed in a per-user modal (kept separate on
+purpose, so a wider/riskier action isn't just another column next to the everyday PDF-access
+toggle).
 
 ### `PATCH /api/admin/users/[userId]`
-Sets a user's `wikiPdfAccess`.
+Sets a user's `wikiPdfAccess` and/or `isAdmin`. Either field may be sent alone or together.
 
 **Auth:** required, AND the signed-in `User.isAdmin` must be `true`  
-**Body:** `{ "wikiPdfAccess": boolean }`  
-**Response:** `{ "id": string, "wikiPdfAccess": boolean }`; `404` if `userId` doesn't exist,
-`400` if the body isn't a boolean, `401` if the caller isn't an admin.
+**Body:** `{ "wikiPdfAccess"?: boolean, "isAdmin"?: boolean }` (at least one required)  
+**Rules:** rejects `isAdmin: false` on the last remaining admin (`400`) — demoting them would
+lock everyone out of `/admin`, and `isAdmin` has no other grant path than this route or
+`npx prisma studio`.  
+**Response:** `{ "id": string, "wikiPdfAccess": boolean, "isAdmin": boolean }`; `404` if `userId`
+doesn't exist, `400` if the body has neither field as a boolean (or hits the last-admin rule),
+`401` if the caller isn't an admin.
 
 ---
 
