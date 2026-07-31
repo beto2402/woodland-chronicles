@@ -9,6 +9,7 @@ const TYPE_LABEL_ES: Record<string, string> = {
   concept: "Concepto",
   card: "Carta",
   faction: "Facción",
+  action: "Acción",
 };
 
 // Type-to-filter combobox modeled on FactionSelect.tsx. Matches English or Spanish names

@@ -108,7 +108,8 @@
         "es": {
           "title": "Humor: Amargo",
           "body": "En una batalla en el claro de tu Caudillo, antes de tirar los dados puedes retirar cualquier cantidad de fichas de turba de ese claro y de los adyacentes. Coloca en el claro del Caudillo tantos guerreros como fichas de turba hayas retirado."
-        }
+        },
+        "en": { "title": "Mood: Bitter", "body": "" }
       }
     },
     "mood-grandiose": {
@@ -116,7 +117,8 @@
         "es": {
           "title": "Humor: Grandilocuente",
           "body": "Este turno, realiza Avanzar al Caudillo antes que Comandar a los Cientos — el orden habitual se invierte."
-        }
+        },
+        "en": { "title": "Mood: Grandiose", "body": "" }
       }
     },
     "mood-jubilant": {
@@ -124,7 +126,8 @@
         "es": {
           "title": "Humor: Jubiloso",
           "body": "Cada vez que uses Incitar en el claro de tu Caudillo, después de colocar esa ficha de turba puedes (hasta 4 veces) tirar el dado de turba y colocar una ficha de turba adicional en un claro que coincida, sin ficha de turba, adyacente a cualquier claro con ficha de turba."
-        }
+        },
+        "en": { "title": "Mood: Jubilant", "body": "" }
       }
     },
     "mood-lavish": {
@@ -132,7 +135,8 @@
         "es": {
           "title": "Humor: Espléndido",
           "body": "Al final de tu Alba, puedes retirar permanentemente cualquier cantidad de objetos de tu Alijo. Por cada objeto retirado, coloca 2 guerreros en el claro de tu Caudillo. Al terminar, desliza los objetos restantes de tu Alijo para llenar sus pistas de izquierda a derecha."
-        }
+        },
+        "en": { "title": "Mood: Lavish", "body": "" }
       }
     },
     "mood-relentless": {
@@ -140,7 +144,8 @@
         "es": {
           "title": "Humor: Implacable",
           "body": "Cada vez que uses Avanzar al Caudillo y muevas Y batalles en la misma repetición, después puedes además mover al Caudillo con cualquier guerrero tuyo, o batallar en su claro."
-        }
+        },
+        "en": { "title": "Mood: Relentless", "body": "" }
       }
     },
     "mood-rowdy": {
@@ -148,7 +153,8 @@
         "es": {
           "title": "Humor: Alborotador",
           "body": "En tu Noche, roba 1 carta adicional al robar. Si el claro de tu Caudillo tiene 3 o más piezas enemigas (aunque sean de varias facciones), roba 2 adicionales en su lugar."
-        }
+        },
+        "en": { "title": "Mood: Rowdy", "body": "" }
       }
     },
     "mood-stubborn": {
@@ -156,7 +162,8 @@
         "es": {
           "title": "Humor: Terco",
           "body": "En una batalla en el claro de tu Caudillo, ignoras el primer golpe que recibas. (No se combina con otras habilidades que también ignoren el primer golpe.)"
-        }
+        },
+        "en": { "title": "Mood: Stubborn", "body": "" }
       }
     },
     "mood-wrathful": {
@@ -164,7 +171,8 @@
         "es": {
           "title": "Humor: Iracundo",
           "body": "Como atacante en una batalla en el claro de tu Caudillo, das un golpe adicional."
-        }
+        },
+        "en": { "title": "Mood: Wrathful", "body": "" }
       }
     }
   },

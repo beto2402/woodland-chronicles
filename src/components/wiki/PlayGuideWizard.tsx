@@ -120,6 +120,27 @@ export function PlayGuideWizard({
       }
     }
 
+    // A search result (WikiSearch) can deep-link straight to one action via ?action=id,
+    // overriding whatever phase/step localStorage had restored above. Nested (onFailureBlocks)
+    // actions land on their parent driven screen instead, since they aren't independently
+    // navigable steps.
+    const targetAction = new URLSearchParams(window.location.search).get("action");
+    if (targetAction) {
+      for (let i = 0; i < guide.blocks.length; i++) {
+        const b = guide.blocks[i];
+        const matches = b.actionIds.includes(targetAction) ||
+          (b.kind === "driven" && b.onFailureBlocks?.some((fb) => fb.actionIds.includes(targetAction)));
+        if (!matches) continue;
+        const phaseI = PHASE_ORDER.indexOf(b.phase);
+        const idxInPhase = guide.blocks.filter((ob) => ob.phase === b.phase).indexOf(b);
+        if (phaseI !== -1 && idxInPhase !== -1) {
+          setPhaseIdx(phaseI);
+          setActionIdx(idxInPhase);
+        }
+        break;
+      }
+    }
+
     hydrated.current = true;
     // Intentionally mount-only: this reads localStorage once to resume where the visitor left
     // off, independent of prop identity.

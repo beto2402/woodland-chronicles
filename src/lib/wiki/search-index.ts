@@ -1,10 +1,10 @@
-import { getAllConcepts, getAllCards, type GameId } from "./loaders";
+import { getAllConcepts, getAllCards, getFactionGuide, type GameId } from "./loaders";
 import factionNames from "../../../game-content/root/faction-names.json";
 import { FACTIONS } from "@/components/factions-data";
 
 export interface SearchEntry {
   id: string;
-  type: "concept" | "card" | "faction";
+  type: "concept" | "card" | "faction" | "action";
   label: string; // primary display label, e.g. "Claro · Clearing"
   href: string;
   searchTerms: string[]; // every populated language's name/aliases, lowercased
@@ -58,7 +58,32 @@ export function buildSearchIndex(gameId: GameId): SearchEntry[] {
         })
       : [];
 
-  return [...concepts, ...cards, ...factions];
+  // Guide actions (e.g. Lord of the Hundreds' Moods) are only searchable once they carry an
+  // "en" title — most actions are Spanish-only prose and would just be noise here. Adding an
+  // "en" title to an action's translations is what opts it into search; nothing else changes.
+  const actions: SearchEntry[] =
+    gameId === "root"
+      ? FACTIONS.flatMap((f) => {
+          const guide = getFactionGuide(gameId, f.id);
+          const factionEs = FACTION_NAMES_ES[f.id];
+          return Object.entries(guide.actions)
+            .filter(([, action]) => action.translations.en)
+            .map(([actionId, action]) => {
+              const es = action.translations.es?.title;
+              const en = action.translations.en!.title;
+              const base = es ? `${es} · ${en}` : en;
+              return {
+                id: `${f.id}:${actionId}`,
+                type: "action" as const,
+                label: factionEs ? `${base} (${factionEs})` : base,
+                href: `/wiki/${gameId}/facciones/${f.id}/jugar?action=${actionId}`,
+                searchTerms: [en.toLowerCase(), ...(es ? [es.toLowerCase()] : [])],
+              };
+            });
+        })
+      : [];
+
+  return [...concepts, ...cards, ...factions, ...actions];
 }
 
 export function searchIndex(entries: SearchEntry[], query: string): SearchEntry[] {
