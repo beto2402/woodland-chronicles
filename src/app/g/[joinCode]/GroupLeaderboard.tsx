@@ -111,11 +111,11 @@ const styles = `
     }
   }
   .game-winner { grid-area: winner; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-  .winner-label { font-size: 0.62rem; letter-spacing: 0.18em; color: var(--accent-label); text-transform: uppercase; font-family: 'Cinzel', serif; margin-bottom: 2px; }
+  .winner-label { font-size: 0.62rem; letter-spacing: 0.18em; color: var(--accent-label); text-transform: uppercase; font-family: 'Cinzel', serif; margin-bottom: 2px; overflow-wrap: break-word; }
   .winner-entry { display: flex; flex-direction: row; align-items: flex-start; gap: 12px; }
   .winner-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-  .winner-name { font-weight: 700; font-size: 1.15rem; line-height: 1.2; color: #c9922a; }
-  .winner-faction { font-size: 0.9rem; color: #a0b090; }
+  .winner-name { font-weight: 700; font-size: 1.15rem; line-height: 1.2; color: #c9922a; overflow-wrap: break-word; }
+  .winner-faction { font-size: 0.9rem; color: #a0b090; overflow-wrap: break-word; }
   .game-players { grid-area: losers; display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
   .player-chip { font-size: 0.85rem; color: #a0b090; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; }
   .player-chip-name { line-height: 1.1; }
