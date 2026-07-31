@@ -108,7 +108,7 @@
       "repeat": "unlimited"
     },
     { "kind": "action", "id": "b5", "phase": "evening", "actionIds": ["discard"], "repeat": "once" },
-    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["set-costs"], "repeat": "once" }
+    { "kind": "action", "id": "b6", "phase": "evening", "actionIds": ["set-costs"], "repeat": { "max": 1 } }
   ],
   "notes": {
     "es": [

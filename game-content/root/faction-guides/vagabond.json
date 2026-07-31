@@ -130,7 +130,7 @@
   },
   "blocks": [
     { "kind": "action", "id": "b1", "phase": "birdsong", "actionIds": ["refresh"], "repeat": "once" },
-    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["slip"], "repeat": "once" },
+    { "kind": "action", "id": "b2", "phase": "birdsong", "actionIds": ["slip"], "repeat": { "max": 1 } },
     {
       "kind": "action",
       "id": "b3",
