@@ -42,14 +42,17 @@ export async function POST(req: Request, { params }: Params) {
   const body = await req.json();
   const { date, victoryType, isVirtual, hasHirelings, players } = body;
 
-  // Validate victory type
+  // Validate victory type. Matched case-insensitively since the log-game form sends
+  // title-case labels ("Domination", "Coalition") while the Prisma enum is upper-case —
+  // an exact-case map previously only matched "Score (30pts)" by coincidence, silently
+  // rejecting every Domination/Coalition submission.
   const victoryTypeMap: Record<string, VictoryType> = {
-    "Score (30pts)": VictoryType.SCORE,
+    "SCORE (30PTS)": VictoryType.SCORE,
     SCORE: VictoryType.SCORE,
     DOMINATION: VictoryType.DOMINATION,
     COALITION: VictoryType.COALITION,
   };
-  const mappedVictoryType = victoryTypeMap[victoryType];
+  const mappedVictoryType = victoryTypeMap[String(victoryType).toUpperCase()];
   if (!mappedVictoryType) {
     return NextResponse.json({ error: "Invalid victoryType" }, { status: 400 });
   }
