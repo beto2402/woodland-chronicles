@@ -61,6 +61,9 @@ export const wikiStyles = `
   .wiki-play-button { display: inline-block; margin-top: 16px; background: #8b3a1a; border: none; border-radius: 3px; color: #f2e8d0; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.82rem; letter-spacing: 0.1em; padding: 10px 22px; text-decoration: none; }
   .wiki-play-button:hover { background: #a04520; }
 
+  .wiki-pdf-link { display: inline-block; margin-top: 10px; margin-left: 10px; background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #a0b090; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.78rem; padding: 9px 16px; text-decoration: none; transition: all 0.15s; }
+  .wiki-pdf-link:hover { border-color: #5a6a4a; color: #f2e8d0; }
+
   .lookup { position: relative; margin-bottom: 18px; }
   .lookup-input { width: 100%; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.85rem; padding: 8px 12px; outline: none; box-sizing: border-box; }
   .lookup-input:focus { border-color: #c9922a; }

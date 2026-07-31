@@ -95,6 +95,14 @@ model User {
   name          String? // Google display name, not their Root username
   image         String?
   createdAt     DateTime  @default(now())
+  // Global app admin — not the per-group GroupPlayer.role. Gates /admin, which is currently the
+  // only thing that needs a global admin: granting wikiPdfAccess below. No self-service UI;
+  // toggled by hand via `npx prisma studio`.
+  isAdmin       Boolean   @default(false)
+  // Gates access to the wiki's downloadable faction guide PDFs (third-party BGG content we
+  // don't have redistribution rights to broadcast publicly). Granted per user by an admin via
+  // /admin — see src/app/admin/.
+  wikiPdfAccess Boolean   @default(false)
 
   accounts       Account[]
   sessions       Session[]

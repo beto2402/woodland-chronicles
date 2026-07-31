@@ -16,6 +16,8 @@ Created automatically by NextAuth (`@auth/prisma-adapter`). One user per Google 
 | image | String? | from Google profile |
 | claimedPlayer | Player? | one-to-one; null until user claims a player |
 | loggedGames | Game[] | games this user has logged |
+| isAdmin | Boolean | default `false`; global app admin (distinct from the per-group `GroupPlayer.role`). Gates `/admin`. No self-service UI; toggled by hand via `npx prisma studio`. |
+| wikiPdfAccess | Boolean | default `false`; gates the wiki's downloadable faction guide PDFs (third-party BGG content — see `docs/components.md`). Granted per user by an admin via `/admin` (`PATCH /api/admin/users/[userId]`). |
 
 ### Player
 Represents a Root player identity. **Global** — shared across groups, not per-group.

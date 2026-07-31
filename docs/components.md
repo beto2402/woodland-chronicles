@@ -140,12 +140,17 @@ Standings and Battle Log are wrapped in a `.main-grid`: a single stacked column 
 
 In-app "how to play" guide. Displayed in Spanish, searchable in English or Spanish. Scoped by
 `gameId` in both routes and data from day one (`SUPPORTED_GAMES = ["root"]` today) so a second
-game later is additive, not a rearchitecture — see `game-content/root/` below. No API routes;
-everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Prisma (tips).
+game later is additive, not a rearchitecture — see `game-content/root/` below. Almost no API
+routes; everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Prisma
+(tips) — the one exception is the gated guide-PDF route, see `FactionGuidePdfLink.tsx` below and
+`docs/api.md`.
 
 **Routes** (all under `src/app/wiki/[gameId]/`, server components, 404 if `gameId` isn't in
 `SUPPORTED_GAMES`):
-- `src/app/wiki/page.tsx` — redirects to `/wiki/root` (only game today, so no real picker UI yet)
+- `src/app/wiki/page.tsx` — renders `WikiEntry`, which redirects straight to `/wiki/root` if a
+  wiki language was already chosen (`localStorage["wiki:root:language"]`), otherwise shows a
+  one-time language picker first (only Spanish exists today, so it's a single-button picker —
+  sets up the pattern for a second language rather than hardcoding straight through)
 - `[gameId]/page.tsx` — search + links to the three sections below
 - `[gameId]/conceptos/page.tsx` + `[id]/page.tsx` — glossary list + detail
 - `[gameId]/cartas/page.tsx` + `[id]/page.tsx` — card list + detail, with a beginner-mode
@@ -160,7 +165,7 @@ everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Pr
   embedded in translated body text as internal links. ~25-line regex parser, no markdown library.
 - `WikiSearch.tsx` — type-to-filter combobox modeled on `FactionSelect.tsx`; matches every
   populated language's name/aliases (not a hardcoded English/Spanish pair), merging concepts +
-  cards + the 14 `FACTIONS`.
+  cards + the 14 `FACTIONS` + individual guide actions (see `search-index.ts` below).
 - `PlayGuideWizard.tsx` (client) — two-tier navigation over a faction's `GuideBlock`s (see
   below): "Fase ◀◀/▶▶" jumps straight to the next/previous phase's first block, "Acción ←/→"
   steps within the current phase. Position (`phaseIdx`/`actionIdx` per faction) and beginner mode
@@ -171,6 +176,10 @@ everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Pr
   (defaults to the first variant) appears above the phase pills, persisted to
   `wiki:${gameId}:${factionId}:variant`; the chosen variant's `actionOverrides` are merged over
   `guide.actions` before rendering. Matching `Tip`s show inline per screen when beginner mode is on.
+  On mount, a `?action=<actionId>` query param (set by a `WikiSearch` action result) jumps
+  straight to that action's block, overriding whatever `localStorage` progress would otherwise
+  restore; an action nested in a `DrivenActionBlock`'s `onFailureBlocks` lands on the parent
+  driven screen instead, since failure steps aren't independently navigable.
 - `CraftingExplanation.tsx` (client) — beginner-mode-only block on a card's detail page; reads
   the same `localStorage` flag `PlayGuideWizard` writes, and phrases the card's
   `crafting_requirements` in each known faction's own terms (see `faction-crafting.ts`).
@@ -184,6 +193,14 @@ everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Pr
 - `wikiStyles.ts` — one shared `styles` template-literal string (same "no CSS modules, no
   Tailwind" convention as the rest of the app) imported by every wiki page, instead of
   duplicating the ruleset per page.
+- `FactionGuidePdfLink.tsx` (client) — renders a download link to a faction's third-party (BGG)
+  guide PDF, but only when both hold: the visitor's stored wiki language is Spanish (checked
+  client-side, since it's `localStorage`), and the server-resolved `hasAccess` prop is `true`
+  (checked server-side in `[factionId]/page.tsx` via `auth()` + `User.wikiPdfAccess`, since that's
+  an auth-gated DB flag, not something to trust from the client). See `docs/api.md` for the route
+  it links to and why this content is gated at all (redistribution rights). Access is granted per
+  user from `/admin` (`src/app/admin/`, see `docs/api.md`) — a single unlinked page, gated by
+  `requireAdmin()` (`src/lib/admin.ts`, checks `User.isAdmin`), not part of the wiki itself.
 
 **Lib** (`src/lib/wiki/`):
 - `types.ts` — `LanguageCode` (plain string, not a fixed union), `Concept`, `CardEntry`,
@@ -193,15 +210,24 @@ everything is read directly via `src/lib/wiki/loaders.ts` (static content) or Pr
 - `parseWikiText.ts` — the `[[concept:id]]`/`[[card:key]]` regex parser shared by `WikiText.tsx`
   (real navigation) and `InGameLookup.tsx` (inline panel swap), so both stay in sync.
 - `loaders.ts` — `gameId`-scoped getters (`getAllConcepts`, `getConcept`, `getAllCards`,
-  `getCard`, `getFactionGuide`, `findBlockForAction`) reading the JSON under `game-content/<gameId>/`.
+  `getCard`, `getFactionGuide`, `findBlockForAction`, `getFactionGuidePdfBlobPath`) reading the
+  JSON under `game-content/<gameId>/`. `getFactionGuidePdfBlobPath` returns the Vercel Blob
+  pathname for a faction's third-party guide PDF, or `null` if that faction isn't covered by it
+  (only factions through the Marauder expansion have one) — used by both the gated API route and
+  the overview page to decide whether to even check access.
   Card data (`translations/base-deck.json`) is keyed by base-language (English) card name and
   normalized here: `"esp"` → `"es"`, and any `"(EN unverified)"` planning-time flag in a key is
   stripped into a clean `nameEn` + `nameEnUnverified` boolean + a URL-safe `id` slug, so it never
   leaks into routes or search. `findBlockForAction` also searches each `DrivenActionBlock`'s
   `onFailureBlocks`, so a tip can target a Turmoil-style consequence step too.
 - `search-index.ts` — `buildSearchIndex(gameId)` / `searchIndex(entries, query)`: merges
-  concepts + cards + factions into one flat array, substring-matched against every populated
-  language's name/aliases.
+  concepts + cards + factions + guide actions into one flat array, substring-matched against
+  every populated language's name/aliases. An `Action` only becomes searchable once its
+  `translations` includes an `"en"` title (most actions are Spanish-only prose and would just be
+  noise) — e.g. Lord of the Hundreds' 8 Moods carry `en` titles ("Mood: Bitter", etc.) purely so
+  they're findable by their English card name; that title is never displayed, since
+  `DISPLAY_LANGUAGES` is `["es"]`. An action's search result links to
+  `.../jugar?action=<actionId>`, which `PlayGuideWizard` reads to jump straight to it.
 - `faction-crafting.ts` — `FactionCraftingInfo` per faction (which piece it activates to craft,
   how it's obtained) for the beginner-mode card explanation. Covers all 14 factions, every one
   with a complete turn-guide today: Marquise (Workshop), Alliance (Sympathy token), Eyrie (Roost),

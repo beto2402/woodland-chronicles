@@ -206,13 +206,49 @@ Deletes a moment.
 
 ## Wiki
 
-The in-app "how to play Root" wiki (`src/app/wiki/`) has **no API routes**, by design. Static
-content (concepts, cards, faction turn-guides) is read directly from `game-content/<gameId>/`
-via `src/lib/wiki/loaders.ts` — no server round-trip needed. The one DB-backed piece, per-faction
-`Tip`s, is queried directly via Prisma inside the server component
+The in-app "how to play Root" wiki (`src/app/wiki/`) has almost **no API routes**, by design.
+Static content (concepts, cards, faction turn-guides) is read directly from
+`game-content/<gameId>/` via `src/lib/wiki/loaders.ts` — no server round-trip needed. The one
+DB-backed piece, per-faction `Tip`s, is queried directly via Prisma inside the server component
 `src/app/wiki/[gameId]/facciones/[factionId]/jugar/page.tsx`, the same pattern
 `src/app/g/[joinCode]/page.tsx` uses to fetch `Group` directly rather than via a client-side
-`fetch`. If you're looking for a `/api/wiki/*` route, it intentionally doesn't exist.
+`fetch`. The one exception is the guide-PDF route below, which needs a real server round-trip
+because it's gated (private Blob storage + an auth check), unlike everything else in the wiki.
+
+### `GET /api/wiki/[gameId]/facciones/[factionId]/guide-pdf`
+Streams a privately-stored, per-faction "how to play" PDF back to the browser — sourced from a
+third-party BoardGameGeek community guide the app has no rights to redistribute openly, so unlike
+`GET /api/blob/[...path]` (public reads), this one is access-gated.
+
+**Auth:** required, AND the signed-in `User.wikiPdfAccess` must be `true`  
+**Access:** `wikiPdfAccess` is granted per user by an admin via `/admin` — see below.  
+**Coverage:** only factions in `getFactionGuidePdfBlobPath()` (`src/lib/wiki/loaders.ts`) have a
+PDF — the BGG source only covers factions through the Marauder expansion. Returns `404` for any
+other faction, `401` if signed out, `403` if signed in without access.  
+**Behavior:** `get(`wiki-guides/<gameId>/<factionId>.pdf`, { access: "private" })`, streamed with
+`Content-Type: application/pdf`. Blobs are populated by the one-off `prisma/upload-wiki-pdfs.mjs`
+script (not run automatically), reading split PDFs from
+`game-content/root/rules-reference/wiki-pdf-guides/` (gitignored, never committed).  
+**Used by:** `FactionGuidePdfLink.tsx`, rendered on a faction's overview page only when the
+visitor's stored wiki language is Spanish and the server already resolved `hasAccess`.
+
+---
+
+## Admin
+
+`src/app/admin/` — a single, unlinked page (`/admin`, no nav entry anywhere) for granting
+`wikiPdfAccess`. Gated by `requireAdmin()` (`src/lib/admin.ts`), which checks the signed-in
+user's `User.isAdmin`; the page 404s (not a redirect) for non-admins, so its existence isn't
+hinted at. `isAdmin` itself has no route — it's toggled by hand via `npx prisma studio`, on
+purpose, since granting admin is rarer and higher-stakes than granting PDF access.
+
+### `PATCH /api/admin/users/[userId]`
+Sets a user's `wikiPdfAccess`.
+
+**Auth:** required, AND the signed-in `User.isAdmin` must be `true`  
+**Body:** `{ "wikiPdfAccess": boolean }`  
+**Response:** `{ "id": string, "wikiPdfAccess": boolean }`; `404` if `userId` doesn't exist,
+`400` if the body isn't a boolean, `401` if the caller isn't an admin.
 
 ---
 

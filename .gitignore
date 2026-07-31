@@ -50,4 +50,5 @@ next-env.d.ts
 # local editor settings
 /.vscode/
 /.claude/
-game-content/*/rules-reference/*.pdf
+game-content/*/rules-reference/**/*.pdf
+game-content/*/rules-reference/wiki-pdf-guides/

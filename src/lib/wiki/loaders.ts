@@ -95,6 +95,31 @@ const GUIDES_BY_GAME: Record<GameId, Record<string, FactionTurnGuide>> = {
   },
 };
 
+// Factions covered by the third-party (BoardGameGeek) turn-guide PDF, split per-faction and
+// stored privately in Vercel Blob — see prisma/upload-wiki-pdfs.mjs. It's someone else's work
+// (not ours to redistribute openly), so it's served only through the auth+access-gated
+// /api/wiki/[gameId]/facciones/[factionId]/guide-pdf route, never linked directly. Only covers
+// factions up through the Marauder expansion; vagabond2 shares vagabond's PDF, same as its guide.
+const PDF_GUIDE_BLOB_PATH: Record<GameId, Record<string, string>> = {
+  root: {
+    marquise: "wiki-guides/root/marquise.pdf",
+    alliance: "wiki-guides/root/alliance.pdf",
+    eyrie: "wiki-guides/root/eyrie.pdf",
+    vagabond: "wiki-guides/root/vagabond.pdf",
+    vagabond2: "wiki-guides/root/vagabond.pdf",
+    riverfolk: "wiki-guides/root/riverfolk.pdf",
+    lizard: "wiki-guides/root/lizard.pdf",
+    duchy: "wiki-guides/root/duchy.pdf",
+    keepers: "wiki-guides/root/keepers.pdf",
+    lord: "wiki-guides/root/lord.pdf",
+    corvid: "wiki-guides/root/corvid.pdf",
+  },
+};
+
+export function getFactionGuidePdfBlobPath(gameId: GameId, factionId: string): string | null {
+  return PDF_GUIDE_BLOB_PATH[gameId]?.[factionId] ?? null;
+}
+
 export function getAllConcepts(gameId: GameId): Concept[] {
   return CONCEPTS_BY_GAME[gameId] ?? [];
 }

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { isSupportedGame, getFactionGuide, type GameId } from "@/lib/wiki/loaders";
+import { isSupportedGame, getFactionGuide, getFactionGuidePdfBlobPath, type GameId } from "@/lib/wiki/loaders";
 import { FactionPortrait } from "@/components/FactionIcon";
 import { FACTION_MAP } from "@/components/factions-data";
+import { FactionGuidePdfLink } from "@/components/wiki/FactionGuidePdfLink";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import factionNames from "../../../../../../game-content/root/faction-names.json";
 import { wikiStyles } from "@/components/wiki/wikiStyles";
 
@@ -20,6 +23,16 @@ export default async function FactionOverviewPage({
   if (!faction) notFound();
   const guide = getFactionGuide(g, factionId);
   const isReady = guide.status === "complete" || guide.status === "partial";
+
+  const hasGuidePdf = getFactionGuidePdfBlobPath(g, factionId) !== null;
+  let hasPdfAccess = false;
+  if (hasGuidePdf) {
+    const session = await auth();
+    if (session?.user?.id) {
+      const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { wikiPdfAccess: true } });
+      hasPdfAccess = user?.wikiPdfAccess ?? false;
+    }
+  }
 
   return (
     <>
@@ -42,6 +55,7 @@ export default async function FactionOverviewPage({
                 <Link className="wiki-play-button" href={`/wiki/${g}/facciones/${factionId}/jugar`}>
                   ▶ Jugar
                 </Link>
+                {hasGuidePdf && <FactionGuidePdfLink gameId={g} factionId={factionId} hasAccess={hasPdfAccess} />}
                 {guide.notes?.es && guide.notes.es.length > 0 && (
                   <div className="wiki-faction-notes">
                     <div className="wiki-section-heading">Cosas importantes a saber</div>
