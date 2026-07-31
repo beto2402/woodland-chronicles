@@ -103,6 +103,7 @@ export const wikiStyles = `
   .wizard-pending { color: #a0b090; font-style: italic; padding: 20px 0; }
   .wizard-repeat-badge { display: inline-block; font-size: 0.68rem; color: #e08a3a; border: 1px solid rgba(224,138,58,0.4); border-radius: 3px; padding: 2px 8px; margin-bottom: 10px; }
   .wizard-action h3 { font-family: 'Cinzel', serif; font-size: 1.1rem; color: #f2e8d0; margin: 0 0 8px; }
+  .wizard-action-en { font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 400; color: #7a8a6a; }
   .wizard-action p { line-height: 1.6; font-size: 0.92rem; margin: 0 0 14px; }
   .wizard-tip { background: #152515; border-left: 3px solid #c9922a; border-radius: 3px; padding: 10px 12px; font-size: 0.85rem; margin-top: 10px; line-height: 1.5; }
   .wizard-nav { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #2d3b2d; }

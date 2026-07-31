@@ -50,9 +50,16 @@ function repeatLabelEs(repeat: ActionRepeat): string {
 function ActionCard({ gameId, action, modifiers }: { gameId: GameId; action?: Action; modifiers?: ActionModifier[] }) {
   const t = action?.translations.es;
   if (!t) return null;
+  // Most actions are Spanish-only prose (see search-index.ts); the few that also carry an "en"
+  // title (e.g. Lord of the Hundreds' Moods) show it here so the card name is recognizable next
+  // to what search matched it on, not just buried in search metadata.
+  const enTitle = action?.translations.en?.title;
   return (
     <div className="wizard-action">
-      <h3>{t.title}</h3>
+      <h3>
+        {t.title}
+        {enTitle && <span className="wizard-action-en"> · {enTitle}</span>}
+      </h3>
       <p>
         <WikiText gameId={gameId} text={t.body} />
       </p>

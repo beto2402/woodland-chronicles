@@ -179,7 +179,10 @@ routes; everything is read directly via `src/lib/wiki/loaders.ts` (static conten
   On mount, a `?action=<actionId>` query param (set by a `WikiSearch` action result) jumps
   straight to that action's block, overriding whatever `localStorage` progress would otherwise
   restore; an action nested in a `DrivenActionBlock`'s `onFailureBlocks` lands on the parent
-  driven screen instead, since failure steps aren't independently navigable.
+  driven screen instead, since failure steps aren't independently navigable. Its internal
+  `ActionCard` helper also shows an action's `en` title next to the `es` one when present (e.g.
+  Lord of the Hundreds' Moods), so the searchable English name is visible where the action is
+  actually shown, not just in search metadata.
 - `CraftingExplanation.tsx` (client) — beginner-mode-only block on a card's detail page; reads
   the same `localStorage` flag `PlayGuideWizard` writes, and phrases the card's
   `crafting_requirements` in each known faction's own terms (see `faction-crafting.ts`).
