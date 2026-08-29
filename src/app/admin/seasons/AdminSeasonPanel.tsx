@@ -56,8 +56,11 @@ const styles = `
   .back-link:hover { color: #a0b090; }
 `;
 
+// timeZone: "UTC" avoids an off-by-one day (or, near a month boundary, even the wrong month)
+// when the viewer's local time is behind UTC — these are date-only values (Prisma @db.Date),
+// stored/serialized at UTC midnight.
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
+  return new Date(iso).toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 }
 
 export function AdminSeasonPanel() {
