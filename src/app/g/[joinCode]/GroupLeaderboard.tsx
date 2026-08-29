@@ -20,6 +20,10 @@ const VICTORY_EMOJI: Record<string, string> = {
 const MAX_PLAYERS = 6;
 const PROVISIONAL_THRESHOLD = 5;
 const emptyGameRow = () => ({ playerId: "", faction: "", score: "" });
+// timeZone: "UTC" avoids an off-by-one day when the viewer's local time is behind UTC — these
+// are date-only values (Prisma @db.Date), stored/serialized at UTC midnight.
+const fmtShortDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 
 type Player = { id: string; name: string; claimedBy?: { id: string; name: string; image: string } | null };
@@ -300,10 +304,12 @@ const styles = `
   .page-ellipsis { color: #5a6a4a; font-size: 0.8rem; padding: 0 2px; line-height: 30px; user-select: none; }
   .page-size-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #7a8a6a; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 5px 8px; cursor: pointer; outline: none; -webkit-appearance: none; }
 
-  .season-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 10px 14px; margin-top: 20px; }
-  .season-bar-label { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.15em; color: #7a8a6a; text-transform: uppercase; }
-  .season-bar-name { font-size: 0.9rem; color: #f2e8d0; margin-top: 2px; }
-  .season-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.85rem; padding: 7px 10px; cursor: pointer; outline: none; -webkit-appearance: none; }
+  .season-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 8px 14px; margin-top: 20px; }
+  .season-bar-info { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .season-bar-label { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent-label); text-transform: uppercase; }
+  .season-bar-name { font-size: 0.85rem; color: #f2e8d0; font-weight: 700; }
+  .season-bar-dates { font-size: 0.75rem; color: #7a8a6a; }
+  .season-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.78rem; padding: 5px 8px; cursor: pointer; outline: none; -webkit-appearance: none; }
   .page-size-select:focus { border-color: #c9922a; }
   .claimed-badge { font-size: 0.6rem; padding: 1px 6px; background: rgba(201,146,42,0.1); border: 1px solid #c9922a44; border-radius: 2px; color: #c9922a; letter-spacing: 0.08em; }
   .btn-claim { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 2px 8px; transition: all 0.15s; white-space: nowrap; }
@@ -440,6 +446,7 @@ export default function GroupLeaderboard({
   const [pageSize, setPageSize] = useState(5);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | "all">("all");
+  const defaultSeasonApplied = useRef(false);
   const [factionModal, setFactionModal] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [showFactionRanking, setShowFactionRanking] = useState(false);
@@ -448,6 +455,14 @@ export default function GroupLeaderboard({
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => { setGamesPage(0); }, [selectedSeasonId]);
+  // Default to the current (most recent) season rather than "All time" — but only once, on
+  // initial load, so it doesn't stomp a user's later choice every time loadAll() refetches.
+  useEffect(() => {
+    if (defaultSeasonApplied.current || seasons.length === 0) return;
+    defaultSeasonApplied.current = true;
+    const current = seasons.find((s) => !s.endDate) ?? seasons[0];
+    setSelectedSeasonId(current.id);
+  }, [seasons]);
   useEffect(() => {
     if (!factionModal && !profileName && !showFactionRanking) return;
     const onKey = (e: KeyboardEvent) => {
@@ -858,11 +873,14 @@ export default function GroupLeaderboard({
           <>
           {seasons.length > 0 && (
             <div className="season-bar">
-              <div>
-                <div className="season-bar-label">Season</div>
-                <div className="season-bar-name">
-                  {activeSeason ? activeSeason.name : "All time"}
-                </div>
+              <div className="season-bar-info">
+                <span className="season-bar-label">Season</span>
+                <span className="season-bar-name">{activeSeason ? activeSeason.name : "All time"}</span>
+                {activeSeason && (
+                  <span className="season-bar-dates">
+                    {fmtShortDate(activeSeason.startDate)} – {activeSeason.endDate ? fmtShortDate(activeSeason.endDate) : "present"}
+                  </span>
+                )}
               </div>
               <select
                 className="season-select"
