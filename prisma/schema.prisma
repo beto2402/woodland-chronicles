@@ -86,6 +86,24 @@ enum MatchSlot {
   AWAY
 }
 
+// A global time window used to scope "record" and ELO on the leaderboard. Applies across the
+// whole app, not per-group. Game/GamePlayer rows are never moved or altered — a season is a
+// [startDate, endDate) filter applied at read time. Exactly one Season has endDate = null (the
+// currently open one), enforced by a partial unique index (see migration), not a Prisma @unique
+// — same trick already used for Player's case-insensitive name uniqueness.
+model Season {
+  id            String    @id @default(cuid())
+  name          String // auto-generated "Season N" at creation time
+  startDate     DateTime  @db.Date
+  endDate       DateTime? @db.Date // null = currently open
+  cadenceMonths Int // length this season was configured to run; copied at creation so closed
+  // seasons keep a record of the cadence that produced them. Editable (via admin PATCH) only on
+  // the currently-open season.
+  createdAt     DateTime  @default(now())
+
+  @@index([startDate])
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 model User {
@@ -203,11 +221,11 @@ model HallOfFameMoment {
 // Many-to-many with factions via TipTarget (a tip can apply to several factions), and
 // scoped by gameId so future games besides Root can reuse tip keys independently.
 model Tip {
-  id        String      @id @default(cuid())
+  id        String   @id @default(cuid())
   gameId    String // e.g. "root" — matches game-content/<gameId>/
   key       String // stable slug for idempotent seeding
-  text      String      @db.Text
-  createdAt DateTime    @default(now())
+  text      String   @db.Text
+  createdAt DateTime @default(now())
 
   targets TipTarget[]
 

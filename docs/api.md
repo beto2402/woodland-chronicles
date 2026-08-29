@@ -151,6 +151,20 @@ Edits victory points (`score`) for each player already recorded in a game. Doesn
 
 ---
 
+## Seasons
+
+Global time windows (not per-group) used to scope the leaderboard's record and ELO without
+touching any `Game`/`GamePlayer` row — see `docs/schema.md#season` and `docs/components.md` for
+how `GroupLeaderboard.tsx` applies the filter. Managed from `/admin/seasons` (linked from `/admin`).
+
+### `GET /api/seasons`
+Returns every `Season`, newest first.
+
+**Auth:** none required (public)  
+**Response:** `Season[]`
+
+---
+
 ## Hall of Fame
 
 ### `POST /api/upload`
@@ -244,7 +258,8 @@ isn't hinted at. The user list is searched (name/email, client-side) and paginat
 in the server component — no server-side search/pagination route, since the user count is small.
 `wikiPdfAccess` toggles inline per row; `isAdmin` is managed in a per-user modal (kept separate on
 purpose, so a wider/riskier action isn't just another column next to the everyday PDF-access
-toggle).
+toggle). A link on this page ("Gestionar temporadas →") leads to `/admin/seasons`, a separate
+page (same `requireAdmin()`/404 gating) for season management — see below.
 
 ### `PATCH /api/admin/users/[userId]`
 Sets a user's `wikiPdfAccess` and/or `isAdmin`. Either field may be sent alone or together.
@@ -257,6 +272,48 @@ lock everyone out of `/admin`, and `isAdmin` has no other grant path than this r
 **Response:** `{ "id": string, "wikiPdfAccess": boolean, "isAdmin": boolean }`; `404` if `userId`
 doesn't exist, `400` if the body has neither field as a boolean (or hits the last-admin rule),
 `401` if the caller isn't an admin.
+
+### `GET /api/admin/season`
+Returns the currently-open season plus closed history, for `/admin/seasons`
+(`AdminSeasonPanel.tsx`).
+
+**Auth:** required, AND `User.isAdmin` must be `true`  
+**Response:** `{ current: Season | null, history: Season[] }`
+
+### `PATCH /api/admin/season`
+Edits `cadenceMonths` on the currently-open season. Applied live and retroactively: the new
+cadence is measured from that season's existing `startDate`, so it can push the rollover date
+later **or** earlier — including into the past, in which case the season ends immediately as
+part of this same request (see "Rollover mechanics" below), rather than waiting for the next
+cron tick.
+
+**Auth:** required, AND `User.isAdmin` must be `true`  
+**Body:** `{ "cadenceMonths": number }` — must be a positive integer  
+**Response:** `{ current: Season | null, history: Season[], rolled: boolean }` — `rolled: true`
+means the season ended immediately as a result of this edit.
+
+### `POST /api/admin/season/rollover`
+Manual override: closes the currently-open season right now, regardless of cadence, and opens
+the next one starting now. For real-world edge cases (e.g. ending a season early for an event).
+
+**Auth:** required, AND `User.isAdmin` must be `true`  
+**Response:** `{ current: Season | null, history: Season[] }`
+
+### `GET /api/cron/seasons`
+Invoked by Vercel Cron (see `vercel.json`, daily at 06:00 UTC) — closes the open season and
+opens the next one if its configured cadence has elapsed. Not for interactive use, but safe to
+call directly (e.g. `curl`) for testing.
+
+**Auth:** `Authorization: Bearer <CRON_SECRET>`, checked against `process.env.CRON_SECRET`; `401`
+if missing/wrong.  
+**Behavior:** idempotent — once a season rolls over, its successor's own due date is necessarily
+in the future, so a duplicate call the same day is a no-op.  
+**Response:** `{ rolled: boolean }`
+
+**Rollover mechanics (`src/lib/seasons.ts`):** a season's due date is always computed fresh as
+`startDate + cadenceMonths` (`computeDueDate`, `src/lib/season-core.ts`) — there's no
+separately-scheduled timer per season to go stale. `rolloverIfDue()` is called both by this cron
+route and by the cadence-edit route above; `forceRolloverNow()` backs the manual override.
 
 ---
 
@@ -274,9 +331,16 @@ ELO is maintained automatically on `POST /games` and `DELETE /games/:id`. Both r
 - `recalculateGroupElo(groupId)` — replays all games in the group chronologically, updates `GroupPlayer.groupElo`
 - `recalculateGlobalElo()` — replays all games across all groups, updates `Player.globalElo`
 
-**Algorithm (`src/lib/elo.ts`):**
+**Algorithm (`src/lib/elo-core.ts`):**
 - Pairwise comparisons: every winner beats every loser (score 1–0); coalition co-winners draw (0.5–0.5); loser-vs-loser pairs are skipped
 - K-factor: `K=32` divided by `(N-1)` to prevent inflation in larger games
 - Starting ELO: 1000
 - Recalculates from scratch on every change (correct even after deletions)
 - `scripts/backfill-elo.mjs` — one-time backfill script for pre-existing game history
+
+The pure math (`computeEloDeltas`, `replayGames`) lives in `src/lib/elo-core.ts`, which has no
+imports and is safe to use from client components. `src/lib/elo.ts` re-exports those and adds the
+two Prisma-backed `recalculate*` functions above. `GroupLeaderboard.tsx` imports `replayGames`
+directly from `elo-core.ts` to compute **season-scoped** ELO client-side on demand (restarted
+fresh from 1000 over just the selected season's games) — this is never persisted; only the
+all-time `groupElo`/`globalElo` columns are.

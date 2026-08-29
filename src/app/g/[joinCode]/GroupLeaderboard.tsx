@@ -7,6 +7,7 @@ import { FACTION_MAP, FactionIcon, FactionPortrait, FACTIONS_WITH_PORTRAIT, getF
 import { FactionSelect } from "@/components/FactionSelect";
 import { PlayerSelect } from "@/components/PlayerSelect";
 import { analyzeScreenshot, levenshtein } from "@/lib/screenshot-scan";
+import { replayGames } from "@/lib/elo-core";
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
 // Emoji per stored VictoryType enum value — keeps footer victory tags the same
@@ -33,6 +34,7 @@ type Game = {
   hasHirelings: boolean;
   players: GamePlayer[];
 };
+type Season = { id: string; name: string; startDate: string; endDate: string | null; cadenceMonths: number };
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
@@ -297,6 +299,11 @@ const styles = `
   .page-btn.active { background: rgba(201,146,42,0.12); border-color: #c9922a55; color: #c9922a; cursor: default; }
   .page-ellipsis { color: #5a6a4a; font-size: 0.8rem; padding: 0 2px; line-height: 30px; user-select: none; }
   .page-size-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #7a8a6a; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 5px 8px; cursor: pointer; outline: none; -webkit-appearance: none; }
+
+  .season-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 10px 14px; margin-top: 20px; }
+  .season-bar-label { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.15em; color: #7a8a6a; text-transform: uppercase; }
+  .season-bar-name { font-size: 0.9rem; color: #f2e8d0; margin-top: 2px; }
+  .season-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.85rem; padding: 7px 10px; cursor: pointer; outline: none; -webkit-appearance: none; }
   .page-size-select:focus { border-color: #c9922a; }
   .claimed-badge { font-size: 0.6rem; padding: 1px 6px; background: rgba(201,146,42,0.1); border: 1px solid #c9922a44; border-radius: 2px; color: #c9922a; letter-spacing: 0.08em; }
   .btn-claim { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 2px 8px; transition: all 0.15s; white-space: nowrap; }
@@ -431,6 +438,8 @@ export default function GroupLeaderboard({
   const [logging, setLogging] = useState(false);
   const [gamesPage, setGamesPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | "all">("all");
   const [factionModal, setFactionModal] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [showFactionRanking, setShowFactionRanking] = useState(false);
@@ -438,6 +447,7 @@ export default function GroupLeaderboard({
   const isCoalition = victoryType === "Coalition";
 
   useEffect(() => { loadAll(); }, []);
+  useEffect(() => { setGamesPage(0); }, [selectedSeasonId]);
   useEffect(() => {
     if (!factionModal && !profileName && !showFactionRanking) return;
     const onKey = (e: KeyboardEvent) => {
@@ -467,12 +477,14 @@ export default function GroupLeaderboard({
   async function loadAll() {
     setLoading(true);
     try {
-      const [gRes, rRes] = await Promise.all([
+      const [gRes, rRes, sRes] = await Promise.all([
         fetch(`/api/groups/${joinCode}/games`),
         fetch(`/api/groups/${joinCode}/roster`),
+        fetch(`/api/seasons`),
       ]);
       if (gRes.ok) setGames(await gRes.json());
       if (rRes.ok) setRoster(await rRes.json());
+      if (sRes.ok) setSeasons(await sRes.json());
     } catch (_) {}
     setLoading(false);
   }
@@ -687,8 +699,29 @@ export default function GroupLeaderboard({
     }
   }
 
+  // Season selection: "all" reproduces today's unfiltered behavior exactly. A specific season
+  // narrows every downstream computation below (battle log, record, ELO) to that season's
+  // half-open [startDate, endDate) window over game.date — no game/GamePlayer rows are ever
+  // touched, this is purely a read-time filter.
+  const activeSeason = selectedSeasonId === "all" ? null : seasons.find((s) => s.id === selectedSeasonId) ?? null;
+  const scopedGames = activeSeason
+    ? games.filter((g) => g.date >= activeSeason.startDate && (!activeSeason.endDate || g.date < activeSeason.endDate))
+    : games;
+
+  // Season-scoped ELO is recomputed fresh from 1000 over just scopedGames, using the exact same
+  // pairwise math as all-time ELO (elo-core.ts) — not persisted, not a different formula.
+  const playerIdByLowerName: Record<string, string> = {};
+  for (const entry of roster) playerIdByLowerName[entry.player.name.toLowerCase()] = entry.playerId;
+  const seasonRatings = activeSeason
+    ? replayGames(
+        [...scopedGames]
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .map((g) => ({ players: g.players.map((p) => ({ playerId: p.playerId, isWinner: p.isWinner })) })),
+      )
+    : null;
+
   // Games sorted newest-first for the battle log
-  const sortedGames = [...games].sort((a, b) => b.date.localeCompare(a.date));
+  const sortedGames = [...scopedGames].sort((a, b) => b.date.localeCompare(a.date));
   const totalPages = Math.max(1, Math.ceil(sortedGames.length / pageSize));
   const safePage = Math.min(gamesPage, totalPages - 1);
   const pagedGames = sortedGames.slice(safePage * pageSize, (safePage + 1) * pageSize);
@@ -702,7 +735,7 @@ export default function GroupLeaderboard({
   }
 
   const playerStats: Record<string, { name: string; wins: number; games: number; scoreSum: number; scoredGames: number; factions: Set<string>; factionDetail: Record<string, { games: number; wins: number }> }> = {};
-  for (const game of games) {
+  for (const game of scopedGames) {
     for (const p of game.players) {
       const key = p.player.name.toLowerCase();
       if (!playerStats[key]) {
@@ -725,7 +758,9 @@ export default function GroupLeaderboard({
   const leaderboard = Object.values(playerStats)
     .map((p) => ({
       ...p,
-      groupElo: rosterElo[p.name.toLowerCase()] ?? 1000,
+      groupElo: activeSeason
+        ? Math.round(seasonRatings?.[playerIdByLowerName[p.name.toLowerCase()]] ?? 1000)
+        : rosterElo[p.name.toLowerCase()] ?? 1000,
       avgScore: p.scoredGames > 0 ? p.scoreSum / p.scoredGames : null,
       provisional: p.games < PROVISIONAL_THRESHOLD,
     }))
@@ -742,7 +777,7 @@ export default function GroupLeaderboard({
 
   const factionWins: Record<string, number> = {};
   const factionGames: Record<string, number> = {};
-  for (const game of games) {
+  for (const game of scopedGames) {
     for (const p of game.players) {
       if (!p.faction) continue;
       factionGames[p.faction] = (factionGames[p.faction] || 0) + 1;
@@ -821,12 +856,34 @@ export default function GroupLeaderboard({
             </div>
           ) : (
           <>
-          {games.length > 0 && (
+          {seasons.length > 0 && (
+            <div className="season-bar">
+              <div>
+                <div className="season-bar-label">Season</div>
+                <div className="season-bar-name">
+                  {activeSeason ? activeSeason.name : "All time"}
+                </div>
+              </div>
+              <select
+                className="season-select"
+                value={selectedSeasonId}
+                onChange={(e) => setSelectedSeasonId(e.target.value)}
+              >
+                <option value="all">All time</option>
+                {seasons.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}{s.endDate ? "" : " (current)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {scopedGames.length > 0 && (
             <>
               <div className="section-label">Chronicle</div>
               <div className="stats-row">
                 <div className="stat-card">
-                  <div className="stat-card-value">{games.length}</div>
+                  <div className="stat-card-value">{scopedGames.length}</div>
                   <div className="stat-card-label">Games Played</div>
                 </div>
                 <div className="stat-card">

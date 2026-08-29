@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -21,5 +22,26 @@ export default async function AdminPage() {
     orderBy: { createdAt: "asc" },
   });
 
-  return <AdminUserAccess users={users} />;
+  return (
+    <>
+      <AdminUserAccess users={users} />
+      <div style={{ maxWidth: 720, margin: "-40px auto 40px", padding: "0 16px" }}>
+        <Link
+          href="/admin/seasons"
+          style={{
+            display: "inline-block",
+            fontFamily: "Lato, sans-serif",
+            fontSize: "0.85rem",
+            color: "#a0b090",
+            border: "1px solid #2d3b2d",
+            borderRadius: 4,
+            padding: "9px 14px",
+            textDecoration: "none",
+          }}
+        >
+          Gestionar temporadas →
+        </Link>
+      </div>
+    </>
+  );
 }

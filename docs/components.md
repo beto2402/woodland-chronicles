@@ -33,6 +33,24 @@ Belongs to the separate hidden Quinielas feature — see **`docs/quinielas.md`**
 
 ---
 
+### `src/app/admin/seasons/page.tsx` + `AdminSeasonPanel.tsx` — Season management (admin)
+Server page gated by `requireAdmin()`, same 404-not-redirect pattern as `/admin`. Linked from
+`/admin` ("Gestionar temporadas →"); not linked from anywhere else. Renders
+`AdminSeasonPanel.tsx` (client component, visual style matches `AdminUserAccess.tsx`), which
+fetches its own data from `GET /api/admin/season` rather than receiving server props:
+
+- **Current season card**: name, start date, computed rollover date (`computeDueDate` from
+  `src/lib/season-core.ts`), days remaining.
+- **Cadence input**: on save, computes the current vs. candidate due date client-side and shows a
+  confirmation modal ("Termina actualmente" vs. "Con este cambio") before calling
+  `PATCH /api/admin/season` — warns explicitly if the change means the season ends immediately.
+- **"Terminar temporada ahora"**: confirm-modal-gated call to `POST /api/admin/season/rollover`.
+- **History table**: past seasons (name, date range, cadence), read-only.
+
+See `docs/api.md` (Admin section) for the routes, and `docs/schema.md#season` for the model.
+
+---
+
 ### `src/app/g/[joinCode]/hall-of-fame/HallOfFame.tsx` — Hall of Fame (client component)
 Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me` in one batch on mount; shows a spinner until they resolve (the "+ Record a Moment" button only appears once `me`+`roster` load and confirm membership). Sections, in order:
 Fetches `/hall-of-fame`, `/games`, `/roster`, and `/api/me` in one batch on mount; shows a spinner until they resolve (the "+ Record a Moment" button only appears once `me`+`roster` load and confirm membership). Sections, in order:
@@ -45,7 +63,20 @@ Members get a "+ Record a Moment" form: pick a game, title, description, optiona
 ---
 
 ### `src/app/g/[joinCode]/GroupLeaderboard.tsx` — Main leaderboard (client component)
-The core UI. Fetches roster and games from API on load.
+The core UI. Fetches roster, games, and seasons from API on load.
+
+**Season selector** (top of page, above the Chronicle stats): a dropdown of "All time" + every
+`Season` (newest first, current one marked). Selecting a season computes `scopedGames` — `games`
+filtered to that season's half-open `[startDate, endDate)` window on `game.date` — and every
+downstream computation on the page (Chronicle stats, Standings, faction rankings, Battle Log +
+its pagination) is derived from `scopedGames` instead of `games`. "All time" (`selectedSeasonId
+=== "all"`) is `scopedGames === games` — behavior is unchanged from before seasons existed. ELO
+for a specific season is **not** the persisted `groupElo`: it's recomputed on the fly via
+`replayGames` (imported from `src/lib/elo-core.ts`, safe for client use since it has no
+server-only dependencies) over just `scopedGames`, restarted fresh from 1000 — bridged from
+`playerId`-keyed ratings back to the name-keyed `leaderboard`/`playerStats` via a small
+`playerIdByLowerName` lookup built from the roster. `provisional` status is naturally
+season-scoped too, since it's derived from `playerStats.games`, itself built from `scopedGames`.
 
 The hero section has both a "🏛 Hall of Fame" link and a "📖 Cómo jugar Root" link (to `/wiki`).
 
@@ -334,7 +365,10 @@ Combobox faction picker. Props: `{ value: string, onChange: (id: string) => void
 | `src/lib/auth.ts` | NextAuth config: Google provider, PrismaAdapter, session callback that adds `user.id` |
 | `src/lib/prisma.ts` | Singleton PrismaClient (prevents multiple instances during hot reload) |
 | `src/lib/nanoid.ts` | 8-char alphanumeric join code generator using `crypto.getRandomValues` |
-| `src/lib/elo.ts` | Pure ELO math + DB recalculation. Exports: `computeEloDeltas`, `replayGames`, `recalculateGroupElo`, `recalculateGlobalElo`. No React dependency. |
+| `src/lib/elo-core.ts` | Pure ELO math: `computeEloDeltas`, `replayGames`, `ELO_STARTING`. No imports at all — safe to import from client components (used by `GroupLeaderboard.tsx` for season-scoped ELO). |
+| `src/lib/elo.ts` | Re-exports `elo-core.ts`, plus the Prisma-backed `recalculateGroupElo`/`recalculateGlobalElo`. Server-only (imports `@/lib/prisma`) — don't import from client components. |
+| `src/lib/season-core.ts` | Pure season date math: `computeDueDate(startDate, cadenceMonths)`. No imports — used by both `src/lib/seasons.ts` (server) and `AdminSeasonPanel.tsx` (client, for the cadence-change confirmation modal). |
+| `src/lib/seasons.ts` | Season rollover logic: `rolloverIfDue()` (used by the cron route and the cadence-edit route) and `forceRolloverNow()` (manual admin override). Server-only (uses `@/lib/prisma`). |
 | `src/lib/screenshot-scan.ts` | OCR pipeline for Root end-game screenshots. Exports `analyzeScreenshot(file)` → `{ names, factions }` and `levenshtein(a, b)`. Uses Tesseract.js v7 (lazy-loaded). No React dependency. |
 
 `src/lib/quinielas.ts` is **not part of this app** — see `docs/quinielas.md`.

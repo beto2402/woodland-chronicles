@@ -122,6 +122,23 @@ A tip's **phase** (Birdsong/Daylight/Night) is never stored directly — it's de
 up which `ActionBlock` in the faction's static guide contains `actionId`, avoiding a duplicated,
 driftable field.
 
+### Season
+A global time window (not per-group) used to scope the leaderboard's record and ELO without
+touching any `Game`/`GamePlayer` row — see `docs/api.md#seasons` and `docs/components.md`.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | String (cuid) | PK |
+| name | String | auto-generated `"Season N"` at creation time |
+| startDate | DateTime (Date only) | |
+| endDate | DateTime? (Date only) | `null` = this is the currently open season |
+| cadenceMonths | Int | length this season was configured to run; copied at creation so closed seasons keep a record of the cadence that produced them; editable (via admin) only on the currently-open season |
+| createdAt | DateTime | default `now()` |
+
+Exactly one `Season` has `endDate = null` at a time, enforced by
+`CREATE UNIQUE INDEX "Season_single_open_idx" ON "Season" ((true)) WHERE "endDate" IS NULL`
+(NOT a Prisma `@unique`) — same trick as `Player`'s case-insensitive name uniqueness below.
+
 ## Unrelated tables in this database
 
 This same Postgres database also holds `Match` and `QuinielaPick` (plus the `MatchStage`,
@@ -138,3 +155,4 @@ separately in **`docs/quinielas.md`** — don't treat them as part of this app's
 - Case-insensitive unique player names: custom SQL index in migration `20260610000008_case_insensitive_player_names`
 - One claimed player per user: `Player.claimedById @unique`
 - One user per player: enforced by the above unique constraint
+- Exactly one currently-open `Season`: custom SQL partial unique index in migration `20260829170215_season_single_open_index`
