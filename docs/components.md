@@ -65,10 +65,19 @@ Members get a "+ Record a Moment" form: pick a game, title, description, optiona
 ### `src/app/g/[joinCode]/GroupLeaderboard.tsx` — Main leaderboard (client component)
 The core UI. Fetches roster, games, and seasons from API on load.
 
-**Season selector** (top of page, above the Chronicle stats): a dropdown of "All time" + every
-`Season` (newest first, current one marked). Selecting a season computes `scopedGames` — `games`
-filtered to that season's half-open `[startDate, endDate)` window on `game.date` — and every
-downstream computation on the page (Chronicle stats, Standings, faction rankings, Battle Log +
+**Season selector**: a full-width banner (`.stat-card.stat-card-btn.season-banner` — same visual
+language as the Chronicle stat cards, just spanning the full width) at the top of the Chronicle
+section, right under the "Chronicle" label and above the 3-column stats row. Shows the active
+selection's name and date range; clicking it opens a "Seasons" modal (same backdrop/card pattern
+as the Faction Rankings/Player Profile modals) listing "All time" + every `Season` (newest first,
+current one marked and highlighted if active) as clickable rows — picking one closes the modal
+and applies the selection immediately. The Chronicle section's gate is `games.length > 0` (all-time
+existence), not `scopedGames.length > 0`, so the banner/selector stays reachable even if the
+currently-selected season has zero games in it (stats just show zeros in that case).
+
+Selecting a season computes `scopedGames` — `games` filtered to that season's half-open
+`[startDate, endDate)` window on `game.date` — and every downstream computation on the page
+(Chronicle stats, Standings, faction rankings, Battle Log +
 its pagination) is derived from `scopedGames` instead of `games`. "All time" (`selectedSeasonId
 === "all"`) is `scopedGames === games` — behavior is unchanged from before seasons existed. ELO
 for a specific season is **not** the persisted `groupElo`: it's recomputed on the fly via

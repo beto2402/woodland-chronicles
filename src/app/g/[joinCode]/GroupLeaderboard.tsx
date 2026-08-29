@@ -304,12 +304,13 @@ const styles = `
   .page-ellipsis { color: #5a6a4a; font-size: 0.8rem; padding: 0 2px; line-height: 30px; user-select: none; }
   .page-size-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #7a8a6a; font-family: 'Lato', sans-serif; font-size: 0.75rem; padding: 5px 8px; cursor: pointer; outline: none; -webkit-appearance: none; }
 
-  .season-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; background: #1a2e1a; border: 1px solid #2d3b2d; border-radius: 4px; padding: 8px 14px; margin-top: 20px; }
-  .season-bar-info { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-  .season-bar-label { font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.2em; color: var(--accent-label); text-transform: uppercase; }
-  .season-bar-name { font-size: 0.85rem; color: #f2e8d0; font-weight: 700; }
-  .season-bar-dates { font-size: 0.75rem; color: #7a8a6a; }
-  .season-select { background: #152515; border: 1px solid #2d3b2d; border-radius: 3px; color: #f2e8d0; font-family: 'Lato', sans-serif; font-size: 0.78rem; padding: 5px 8px; cursor: pointer; outline: none; -webkit-appearance: none; }
+  .season-banner { margin-bottom: 8px; }
+  .season-modal-row { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; margin-bottom: 6px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+  .season-modal-row:hover { border-color: #5a6a4a; }
+  .season-modal-row-active { border-color: #c9922a; background: rgba(201,146,42,0.08); }
+  .season-modal-row-name { font-size: 0.88rem; color: #f2e8d0; }
+  .season-modal-row-active .season-modal-row-name { color: #c9922a; font-weight: 700; }
+  .season-modal-row-dates { font-size: 0.7rem; color: #7a8a6a; white-space: nowrap; }
   .page-size-select:focus { border-color: #c9922a; }
   .claimed-badge { font-size: 0.6rem; padding: 1px 6px; background: rgba(201,146,42,0.1); border: 1px solid #c9922a44; border-radius: 2px; color: #c9922a; letter-spacing: 0.08em; }
   .btn-claim { background: none; border: 1px solid #2d3b2d; border-radius: 3px; color: #5a6a4a; cursor: pointer; font-family: 'Lato', sans-serif; font-size: 0.72rem; padding: 2px 8px; transition: all 0.15s; white-space: nowrap; }
@@ -450,18 +451,20 @@ export default function GroupLeaderboard({
   const [factionModal, setFactionModal] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [showFactionRanking, setShowFactionRanking] = useState(false);
+  const [showSeasonModal, setShowSeasonModal] = useState(false);
 
   const isCoalition = victoryType === "Coalition";
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => { setGamesPage(0); }, [selectedSeasonId]);
   useEffect(() => {
-    if (!factionModal && !profileName && !showFactionRanking) return;
+    if (!factionModal && !profileName && !showFactionRanking && !showSeasonModal) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       setFactionModal(null);
       setProfileName(null);
       setShowFactionRanking(false);
+      setShowSeasonModal(false);
     };
     window.addEventListener("keydown", onKey);
     // Lock background scroll while a modal is open (prevents the page from
@@ -472,7 +475,7 @@ export default function GroupLeaderboard({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [factionModal, profileName, showFactionRanking]);
+  }, [factionModal, profileName, showFactionRanking, showSeasonModal]);
   useEffect(() => {
     if (session) {
       fetch("/api/me").then((r) => r.ok ? r.json() : null).then(setMe);
@@ -877,34 +880,24 @@ export default function GroupLeaderboard({
             </div>
           ) : (
           <>
-          {seasons.length > 0 && (
-            <div className="season-bar">
-              <div className="season-bar-info">
-                <span className="season-bar-label">Season</span>
-                <span className="season-bar-name">{activeSeason ? activeSeason.name : "All time"}</span>
-                {activeSeason && (
-                  <span className="season-bar-dates">
-                    {fmtShortDate(activeSeason.startDate)} – {activeSeason.endDate ? fmtShortDate(activeSeason.endDate) : "present"}
-                  </span>
-                )}
-              </div>
-              <select
-                className="season-select"
-                value={selectedSeasonId}
-                onChange={(e) => setSelectedSeasonId(e.target.value)}
-              >
-                <option value="all">All time</option>
-                {seasons.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}{s.endDate ? "" : " (current)"}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          {scopedGames.length > 0 && (
+          {games.length > 0 && (
             <>
               <div className="section-label">Chronicle</div>
+              {seasons.length > 0 && (
+                <button
+                  type="button"
+                  className="stat-card stat-card-btn season-banner"
+                  onClick={() => setShowSeasonModal(true)}
+                  title="Change season"
+                >
+                  <div className="stat-card-value">{activeSeason ? activeSeason.name : "All time"}</div>
+                  <div className="stat-card-label">
+                    {activeSeason
+                      ? `${fmtShortDate(activeSeason.startDate)} – ${activeSeason.endDate ? fmtShortDate(activeSeason.endDate) : "present"}`
+                      : "Season"}
+                  </div>
+                </button>
+              )}
               <div className="stats-row">
                 <div className="stat-card">
                   <div className="stat-card-value">{scopedGames.length}</div>
@@ -1420,6 +1413,36 @@ export default function GroupLeaderboard({
           )}
         </div>
       </div>
+
+      {showSeasonModal && (
+        <div className="faction-modal-backdrop" onClick={() => setShowSeasonModal(false)}>
+          <div className="faction-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="faction-modal-close" onClick={() => setShowSeasonModal(false)}>✕</button>
+            <div className="faction-modal-title">Seasons</div>
+            <div className="faction-modal-sub">Select a Season</div>
+            <button
+              type="button"
+              className={`season-modal-row${selectedSeasonId === "all" ? " season-modal-row-active" : ""}`}
+              onClick={() => { setSelectedSeasonId("all"); setShowSeasonModal(false); }}
+            >
+              <span className="season-modal-row-name">All time</span>
+            </button>
+            {seasons.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`season-modal-row${selectedSeasonId === s.id ? " season-modal-row-active" : ""}`}
+                onClick={() => { setSelectedSeasonId(s.id); setShowSeasonModal(false); }}
+              >
+                <span className="season-modal-row-name">{s.name}{s.endDate ? "" : " (current)"}</span>
+                <span className="season-modal-row-dates">
+                  {fmtShortDate(s.startDate)} – {s.endDate ? fmtShortDate(s.endDate) : "present"}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {showFactionRanking && (
         <div className="faction-modal-backdrop" onClick={() => setShowFactionRanking(false)}>
