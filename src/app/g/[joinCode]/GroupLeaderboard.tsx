@@ -455,14 +455,6 @@ export default function GroupLeaderboard({
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => { setGamesPage(0); }, [selectedSeasonId]);
-  // Default to the current (most recent) season rather than "All time" — but only once, on
-  // initial load, so it doesn't stomp a user's later choice every time loadAll() refetches.
-  useEffect(() => {
-    if (defaultSeasonApplied.current || seasons.length === 0) return;
-    defaultSeasonApplied.current = true;
-    const current = seasons.find((s) => !s.endDate) ?? seasons[0];
-    setSelectedSeasonId(current.id);
-  }, [seasons]);
   useEffect(() => {
     if (!factionModal && !profileName && !showFactionRanking) return;
     const onKey = (e: KeyboardEvent) => {
@@ -499,7 +491,21 @@ export default function GroupLeaderboard({
       ]);
       if (gRes.ok) setGames(await gRes.json());
       if (rRes.ok) setRoster(await rRes.json());
-      if (sRes.ok) setSeasons(await sRes.json());
+      if (sRes.ok) {
+        const seasonsData: Season[] = await sRes.json();
+        setSeasons(seasonsData);
+        // Default to the current (most recent) season rather than "All time" — computed here,
+        // in the same batch as the rest of this load, so the first render that shows any
+        // content already has it selected. Doing this in a separate effect after the fact
+        // caused a visible flash: one render with "All time" banners, then an immediate second
+        // render swapping to the season-scoped ones. Only applied once, on initial load, so it
+        // doesn't stomp a user's later choice every time loadAll() refetches.
+        if (!defaultSeasonApplied.current && seasonsData.length > 0) {
+          defaultSeasonApplied.current = true;
+          const current = seasonsData.find((s) => !s.endDate) ?? seasonsData[0];
+          setSelectedSeasonId(current.id);
+        }
+      }
     } catch (_) {}
     setLoading(false);
   }
