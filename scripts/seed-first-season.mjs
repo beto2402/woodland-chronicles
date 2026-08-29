@@ -7,6 +7,12 @@ const prisma = new PrismaClient();
 
 const DEFAULT_CADENCE_MONTHS = 1; // monthly; editable immediately via /admin/seasons
 
+// Mirrors src/lib/season-core.ts#firstOfMonth (kept inline — this script isn't bundled through
+// the app's TS build, and it's a two-line function not worth complicating the import for).
+function firstOfMonth(date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+}
+
 const existing = await prisma.season.findFirst({ where: { endDate: null } });
 
 if (existing) {
@@ -16,7 +22,10 @@ if (existing) {
     orderBy: { date: "asc" },
     select: { date: true },
   });
-  const startDate = earliestGame?.date ?? new Date();
+  // Anchored to the 1st of the month, not the exact game date — so every later rollover
+  // (which just adds whole months) stays calendar-aligned instead of drifting to whatever day
+  // the earliest game happened to land on.
+  const startDate = firstOfMonth(earliestGame?.date ?? new Date());
 
   const season = await prisma.season.create({
     data: {

@@ -315,6 +315,15 @@ in the future, so a duplicate call the same day is a no-op.
 separately-scheduled timer per season to go stale. `rolloverIfDue()` is called both by this cron
 route and by the cadence-edit route above; `forceRolloverNow()` backs the manual override.
 
+**Calendar alignment:** the first season's `startDate` is anchored to the 1st of its month
+(`firstOfMonth`, `src/lib/season-core.ts`) rather than the exact date it was created/seeded on —
+since every later rollover only ever adds whole months (`computeDueDate`), anchoring the chain's
+first `startDate` to the 1st is what keeps every subsequent boundary on the 1st too, for any
+`cadenceMonths` value. (`forceRolloverNow()` is the one exception: it closes/opens exactly at the
+moment it's called, by design, since it's meant for ad hoc early closures — a manual rollover can
+knock the chain off the 1st going forward.) `scripts/align-seasons-to-month.mjs` is a one-off
+correction script used to fix pre-existing seasons whose boundaries had drifted off the 1st.
+
 ---
 
 ## Quinielas (not part of this app)
