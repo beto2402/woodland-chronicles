@@ -8,6 +8,7 @@ import { FactionSelect } from "@/components/FactionSelect";
 import { PlayerSelect } from "@/components/PlayerSelect";
 import { analyzeScreenshot, levenshtein } from "@/lib/screenshot-scan";
 import { replayGames } from "@/lib/elo-core";
+import { computeRivals, computeUsualTables } from "@/lib/rivalry";
 
 const VICTORY_TYPES = ["Score (30pts)", "Domination", "Coalition"];
 // Emoji per stored VictoryType enum value — keeps footer victory tags the same
@@ -39,6 +40,10 @@ type Game = {
   players: GamePlayer[];
 };
 type Season = { id: string; name: string; startDate: string; endDate: string | null; cadenceMonths: number };
+
+// Half-open [startDate, endDate) window over game.date; null season = all time.
+const filterGamesBySeason = (games: Game[], season: Season | null) =>
+  season ? games.filter((g) => g.date >= season.startDate && (!season.endDate || g.date < season.endDate)) : games;
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
@@ -369,6 +374,41 @@ const styles = `
   .profile-stat-portrait { width: 24px; height: 24px; border-radius: 5px; }
   .profile-donut { width: 160px; height: 160px; }
 
+  /* Rivals + Usual Tables (head-to-head reporting in the profile modal) */
+  .rivals-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 26px 0 14px; }
+  .rivals-head .faction-modal-sub { margin-bottom: 0; }
+  .rival-period { background: #152515; color: #f2e8d0; border: 1px solid #2d3b2d; border-radius: 4px; padding: 5px 8px; font: inherit; font-size: 0.78rem; max-width: 100%; }
+  .rival-period:focus { outline: none; border-color: #c9922a; }
+  .rival-row { width: 100%; display: block; background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; padding: 9px 12px; margin-bottom: 6px; font: inherit; color: inherit; cursor: pointer; text-align: left; }
+  .rival-row:hover { border-color: #5a6a4a; }
+  .rival-row-open { border-color: #c9922a; }
+  .rival-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .rival-name { font-size: 0.9rem; font-weight: 700; color: #f2e8d0; }
+  .rival-meta { font-size: 0.72rem; color: #7a8a6a; }
+  .rival-score { font-size: 0.8rem; color: #d8e0c8; margin-top: 3px; }
+  .rival-score b { color: #c9922a; }
+  .rival-bar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: #0f1a0f; margin-top: 7px; }
+  .rival-bar-me { background: #c9922a; }
+  .rival-bar-them { background: #b5523a; }
+  .rival-bar-other { background: #3a4a3a; }
+  .rival-detail { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #2d3b2d; }
+  .rival-detail-cell { font-size: 0.72rem; color: #7a8a6a; }
+  .rival-detail-cell div { font-size: 0.95rem; color: #f2e8d0; font-weight: 700; }
+  .rival-legend { display: flex; gap: 12px; font-size: 0.66rem; color: #7a8a6a; margin-bottom: 8px; flex-wrap: wrap; }
+  .rival-legend span::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: var(--c); }
+  .rival-more { background: none; border: none; color: #c9922a; font: inherit; font-size: 0.75rem; cursor: pointer; padding: 4px 0; }
+  .usual-table-card { background: #152515; border: 1px solid #2d3b2d; border-radius: 4px; padding: 10px 12px; margin-bottom: 8px; }
+  .usual-table-title { font-size: 0.84rem; color: #f2e8d0; margin-bottom: 8px; }
+  .usual-table-title span { color: #7a8a6a; font-size: 0.74rem; }
+  .usual-table-row { display: grid; grid-template-columns: minmax(0, 7em) 1fr 3.4em; align-items: center; gap: 8px; font-size: 0.78rem; color: #d8e0c8; margin-bottom: 4px; }
+  .usual-table-row-me { color: #c9922a; font-weight: 700; }
+  .usual-table-row-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .usual-table-track { height: 6px; background: #0f1a0f; border-radius: 3px; overflow: hidden; }
+  .usual-table-fill { height: 100%; background: #5a6a4a; }
+  .usual-table-row-me .usual-table-fill { background: #c9922a; }
+  .usual-table-pct { text-align: right; font-size: 0.72rem; color: #7a8a6a; white-space: nowrap; }
+  .usual-table-note { font-size: 0.66rem; color: #5a6a4a; font-style: italic; margin-top: 4px; }
+
   /* Desktop has room — scale the whole profile up and go 3-wide on the stat grid. */
   @media (min-width: 760px) {
     .profile-modal { width: min(660px, 100%); padding: 34px 36px 30px; }
@@ -389,6 +429,11 @@ const styles = `
     .profile-legend { min-width: 200px; gap: 8px; }
     .profile-legend-row { font-size: 0.92rem; }
     .profile-legend-dot { width: 13px; height: 13px; }
+    .rival-name { font-size: 1rem; }
+    .rival-score { font-size: 0.9rem; }
+    .rival-detail { grid-template-columns: repeat(4, 1fr); }
+    .usual-table-title { font-size: 0.95rem; }
+    .usual-table-row { font-size: 0.86rem; grid-template-columns: minmax(0, 9em) 1fr 3.6em; }
   }
 
   /* Standings + Battle Log stack on mobile, sit side by side on wider screens. */
@@ -452,11 +497,24 @@ export default function GroupLeaderboard({
   const [profileName, setProfileName] = useState<string | null>(null);
   const [showFactionRanking, setShowFactionRanking] = useState(false);
   const [showSeasonModal, setShowSeasonModal] = useState(false);
+  // Profile modal's Rivals/Usual Tables period — independent of the banner, reset to it on open.
+  const [rivalSeasonId, setRivalSeasonId] = useState<string | "all">("all");
+  const [rivalOpen, setRivalOpen] = useState<string | null>(null);
+  const [showAllRivals, setShowAllRivals] = useState(false);
+  const [showAllTables, setShowAllTables] = useState(false);
 
   const isCoalition = victoryType === "Coalition";
 
   useEffect(() => { loadAll(); }, []);
   useEffect(() => { setGamesPage(0); }, [selectedSeasonId]);
+  useEffect(() => {
+    if (!profileName) return;
+    setRivalSeasonId(selectedSeasonId);
+    setRivalOpen(null);
+    setShowAllRivals(false);
+    setShowAllTables(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset only when a profile opens
+  }, [profileName]);
   useEffect(() => {
     if (!factionModal && !profileName && !showFactionRanking && !showSeasonModal) return;
     const onKey = (e: KeyboardEvent) => {
@@ -728,9 +786,7 @@ export default function GroupLeaderboard({
   // half-open [startDate, endDate) window over game.date — no game/GamePlayer rows are ever
   // touched, this is purely a read-time filter.
   const activeSeason = selectedSeasonId === "all" ? null : seasons.find((s) => s.id === selectedSeasonId) ?? null;
-  const scopedGames = activeSeason
-    ? games.filter((g) => g.date >= activeSeason.startDate && (!activeSeason.endDate || g.date < activeSeason.endDate))
-    : games;
+  const scopedGames = filterGamesBySeason(games, activeSeason);
 
   // Season-scoped ELO is recomputed fresh from 1000 over just scopedGames, using the exact same
   // pairwise math as all-time ELO (elo-core.ts) — not persisted, not a different formula.
@@ -1529,6 +1585,20 @@ export default function GroupLeaderboard({
         const provisional = entry.games < PROVISIONAL_THRESHOLD;
         const facLabel = (fid: string) => FACTION_MAP[fid]?.name ?? fid;
 
+        // Rivals / Usual Tables: own season picker (defaults to the banner's selection).
+        const profilePlayerId = rosterEntry?.playerId ?? playerIdByLowerName[profileName.toLowerCase()];
+        const rivalSeason = rivalSeasonId === "all" ? null : seasons.find((s) => s.id === rivalSeasonId) ?? null;
+        const rivalGames = filterGamesBySeason(games, rivalSeason);
+        const rivals = profilePlayerId ? computeRivals(profilePlayerId, rivalGames) : [];
+        const usualTables = profilePlayerId ? computeUsualTables(profilePlayerId, rivalGames) : [];
+        const nameById: Record<string, string> = {};
+        for (const r of roster) nameById[r.playerId] = r.player.name;
+        for (const g of rivalGames) for (const p of g.players) nameById[p.playerId] ??= p.player.name;
+        const nameOf = (id: string) => nameById[id] ?? "?";
+        const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0);
+        const shownRivals = showAllRivals ? rivals : rivals.slice(0, 5);
+        const shownTables = showAllTables ? usualTables : usualTables.slice(0, 3);
+
         // Donut segments (faction distribution by games played).
         const R = 60, CIRC = 2 * Math.PI * R;
         const segs = [...factionsPlayed]
@@ -1628,6 +1698,109 @@ export default function GroupLeaderboard({
                     ))}
                   </div>
                 </div>
+              )}
+
+              <div className="rivals-head">
+                <div className="faction-modal-sub">Rivals</div>
+                <select className="rival-period" value={rivalSeasonId}
+                  onChange={(e) => { setRivalSeasonId(e.target.value); setRivalOpen(null); }}>
+                  <option value="all">All time</option>
+                  {seasons.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}{s.endDate ? "" : " (current)"}</option>
+                  ))}
+                </select>
+              </div>
+              {rivals.length === 0 ? (
+                <div className="profile-empty">No games in this period.</div>
+              ) : (
+                <>
+                  <div className="rival-legend">
+                    <span style={{ "--c": "#c9922a" } as React.CSSProperties}>{profileName} won</span>
+                    <span style={{ "--c": "#b5523a" } as React.CSSProperties}>rival won</span>
+                    <span style={{ "--c": "#3a4a3a" } as React.CSSProperties}>someone else</span>
+                  </div>
+                  {shownRivals.map((r) => {
+                    const opp = nameOf(r.opponentId);
+                    const open = rivalOpen === r.opponentId;
+                    // Coalition wins can count for both, so the bar is scaled to its own total.
+                    const barTotal = r.myWins + r.theirWins + r.otherWins;
+                    return (
+                      <button key={r.opponentId} type="button" className={`rival-row${open ? " rival-row-open" : ""}`}
+                        onClick={() => setRivalOpen(open ? null : r.opponentId)}>
+                        <div className="rival-row-top">
+                          <span className="rival-name">{opp}</span>
+                          <span className="rival-meta">
+                            {r.games} {r.games === 1 ? "game" : "games"}
+                            {r.vpGames > 0 && <> · VP ahead {r.vpAhead}/{r.vpGames}</>}
+                          </span>
+                        </div>
+                        <div className="rival-score">
+                          You <b>{r.myWins}</b> – {opp} <b>{r.theirWins}</b>
+                          {r.otherWins > 0 && <span className="rival-meta"> ({r.otherWins} won by others)</span>}
+                        </div>
+                        <div className="rival-bar">
+                          <div className="rival-bar-me" style={{ width: `${pct(r.myWins, barTotal)}%` }} />
+                          <div className="rival-bar-them" style={{ width: `${pct(r.theirWins, barTotal)}%` }} />
+                          <div className="rival-bar-other" style={{ flex: 1 }} />
+                        </div>
+                        {open && (
+                          <div className="rival-detail">
+                            <div className="rival-detail-cell">{profileName} win %<div>{pct(r.myWins, r.games)}%</div></div>
+                            <div className="rival-detail-cell">{opp} win %<div>{pct(r.theirWins, r.games)}%</div></div>
+                            <div className="rival-detail-cell">Won by others<div>{pct(r.otherWins, r.games)}%</div></div>
+                            <div className="rival-detail-cell">VP ahead / behind / tied
+                              <div>{r.vpGames > 0 ? `${r.vpAhead} / ${r.vpBehind} / ${r.vpTied}` : "no VP data"}</div>
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                  {rivals.length > 5 && (
+                    <button type="button" className="rival-more" onClick={() => setShowAllRivals((v) => !v)}>
+                      {showAllRivals ? "Show fewer" : `Show all ${rivals.length}`}
+                    </button>
+                  )}
+                </>
+              )}
+
+              <div className="rivals-head">
+                <div className="faction-modal-sub">Usual Tables</div>
+              </div>
+              {usualTables.length === 0 ? (
+                <div className="profile-empty">No repeated lineups yet — need the same table 2+ times.</div>
+              ) : (
+                <>
+                  {shownTables.map((t) => {
+                    const rows = [profilePlayerId!, ...[...t.opponentIds].sort((a, b) => (t.winsByPlayer[b] ?? 0) - (t.winsByPlayer[a] ?? 0))];
+                    const totalWins = rows.reduce((sum, id) => sum + (t.winsByPlayer[id] ?? 0), 0);
+                    return (
+                      <div key={t.key} className="usual-table-card">
+                        <div className="usual-table-title">
+                          vs {t.opponentIds.map(nameOf).join(", ")} <span>· {t.games} games</span>
+                        </div>
+                        {rows.map((id) => {
+                          const w = t.winsByPlayer[id] ?? 0;
+                          return (
+                            <div key={id} className={`usual-table-row${id === profilePlayerId ? " usual-table-row-me" : ""}`}>
+                              <span className="usual-table-row-name">{nameOf(id)}</span>
+                              <div className="usual-table-track"><div className="usual-table-fill" style={{ width: `${pct(w, t.games)}%` }} /></div>
+                              <span className="usual-table-pct">{pct(w, t.games)}% · {w}</span>
+                            </div>
+                          );
+                        })}
+                        {totalWins > t.games && (
+                          <div className="usual-table-note">Includes coalition wins, so shares add up to more than 100%.</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {usualTables.length > 3 && (
+                    <button type="button" className="rival-more" onClick={() => setShowAllTables((v) => !v)}>
+                      {showAllTables ? "Show fewer" : `Show all ${usualTables.length}`}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>

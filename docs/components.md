@@ -139,6 +139,15 @@ The hero section has both a "🏛 Hall of Fame" link and a "📖 Cómo jugar Roo
 - **Desktop scaling** (`@media (min-width: 760px)`): the card widens (~660px) and the whole profile scales up — larger avatar/name, the stat grid goes from 2 to 3 columns, bigger portraits/fonts, and a larger donut.
   - "Most Dominant" / "Most Noob" = highest / lowest **win rate among factions played 2+ times** (avoids 1-game flukes). Dominant needs ≥1 eligible faction, Noob needs ≥2; otherwise a "Need 2+ games…" / "Not enough variety yet" hint shows.
 - **Faction Distribution donut**: hand-rolled SVG donut (no chart library) — one `<circle>` arc per faction via `stroke-dasharray`/`stroke-dashoffset`, colored by `FACTION_MAP[id].color`, segments sized by games played and sorted descending. Center shows total games. Accompanied by a legend (color dot + name + "games · %").
+- **Period picker** (`rivalSeasonId` state): a `<select>` ("All time" + every `Season`, current one marked) in the Rivals header. It scopes **only** the Rivals and Usual Tables sections. The stats grid and donut keep following the Chronicle banner. Each time a profile opens, it resets to the banner's `selectedSeasonId`. It uses the same `filterGamesBySeason` helper (half-open `[startDate, endDate)`) as the banner's `scopedGames`.
+- **Rivals** (head-to-head, from `computeRivals` in `src/lib/rivalry.ts`): one row per opponent, sorted by shared games. Each row shows games together, "You X – Them Y (Z won by others)", a stacked bar (you won / they won / someone else won), and "VP ahead N/M".
+  - Shows the top 5 with a "Show all" toggle.
+  - Clicking a row (`rivalOpen`) expands it: each player's win % over shared games, % won by others, and VP ahead/behind/tied.
+  - **Coalition** winners each get a win, so a shared coalition win counts for both players.
+  - The **VP record** only counts shared games where both players have a non-null score. It shows "no VP data" when there are none.
+- **Usual Tables** (from `computeUsualTables`): games grouped by the **exact lineup**, the same set of players with no one added or missing. Only lineups played 2+ times are shown; the top 3 by default, with "Show all".
+  - Each card is titled "vs A, B, C · N games" and lists every player's win share (% of the lineup's games + raw wins) as a bar. The profiled player comes first and is highlighted; the rest are sorted by wins.
+  - Coalition games can push the shares above 100%. A note appears when that happens.
 
 **Battle Log (paginated):**
 - Games listed newest-first
@@ -378,6 +387,7 @@ Combobox faction picker. Props: `{ value: string, onChange: (id: string) => void
 | `src/lib/elo.ts` | Re-exports `elo-core.ts`, plus the Prisma-backed `recalculateGroupElo`/`recalculateGlobalElo`. Server-only (imports `@/lib/prisma`) — don't import from client components. |
 | `src/lib/season-core.ts` | Pure season date math: `computeDueDate(startDate, cadenceMonths)`. No imports — used by both `src/lib/seasons.ts` (server) and `AdminSeasonPanel.tsx` (client, for the cadence-change confirmation modal). |
 | `src/lib/seasons.ts` | Season rollover logic: `rolloverIfDue()` (used by the cron route and the cadence-edit route) and `forceRolloverNow()` (manual admin override). Server-only (uses `@/lib/prisma`). |
+| `src/lib/rivalry.ts` | Pure head-to-head stats keyed by `playerId`: `computeRivals(playerId, games)` (per-opponent W/L/other + VP ahead/behind/tied) and `computeUsualTables(playerId, games, minGames = 2)` (win counts per exact lineup). No imports — used by the Player Profile modal in `GroupLeaderboard.tsx`. |
 | `src/lib/screenshot-scan.ts` | OCR pipeline for Root end-game screenshots. Exports `analyzeScreenshot(file)` → `{ names, factions }` and `levenshtein(a, b)`. Uses Tesseract.js v7 (lazy-loaded). No React dependency. |
 
 `src/lib/quinielas.ts` is **not part of this app** — see `docs/quinielas.md`.
